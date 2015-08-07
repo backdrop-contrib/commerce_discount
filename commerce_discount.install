@@ -6,6 +6,13 @@
  */
 
 /**
+ * Implements hook_install().
+ */
+function commerce_discount_install() {
+  commerce_discount_install_helper();
+}
+
+/**
  * Implements hook_schema().
  */
 function commerce_discount_schema() {
@@ -128,14 +135,14 @@ function commerce_discount_requirements($phase) {
 function commerce_discount_install_helper() {
   $fields = field_read_fields(array(), array('include_inactive' => TRUE));
   $field_types = field_info_field_types();
-
   // Clear field info cache, so entity reference, inline_conditions and
   // commerce_product_reference field types can be used.
-  if (!isset($field_types['entityreference'])
-    || !isset($field_types['inline_conditions'])
-    || !isset($field_types['commerce_product_reference'])
-  ) {
+  if (!isset($field_types['entityreference'], $field_types['inline_conditions'], $field_types['commerce_product_reference'])) {
     field_info_cache_clear();
+    // Overwrites variable, because during installation module after clears the
+    // field info cache the field type 'entityreference' not containing
+    // in variables. Under this the field, use this field type is not created.
+    $field_types = field_info_field_types();
   }
 
   if (empty($fields['commerce_discount_offer']) && isset($field_types['entityreference'])) {
