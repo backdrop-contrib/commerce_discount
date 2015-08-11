@@ -907,15 +907,18 @@ function commerce_discount_free_products(EntityDrupalWrapper $wrapper, $discount
  *   The name of the discount being applied.
  * @param array $discount_amount
  *   The discount amount price array (amount, currency_code).
+ * @param array $data
+ *   Optional. An associative array of parameters to include in the line item's
+ *   data array along with the discount name.
  */
-function commerce_discount_add_line_item(EntityDrupalWrapper $order_wrapper, $discount_name, $discount_amount) {
+function commerce_discount_add_line_item(EntityDrupalWrapper $order_wrapper, $discount_name, $discount_amount, $data = array()) {
   // Create a new line item.
   $values = array(
     'type' => 'commerce_discount',
     'order_id' => $order_wrapper->order_id->value(),
     'quantity' => 1,
     // Flag the line item.
-    'data' => array('discount_name' => $discount_name),
+    'data' => array('discount_name' => $discount_name) + $data,
   );
   $discount_line_item = entity_create('commerce_line_item', $values);
   $discount_line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $discount_line_item);
