@@ -192,6 +192,21 @@ function commerce_discount_rules_condition_info() {
     );
   }
 
+  // Add a very simple boolean condition to check whether or not a line item was
+  // added to an order via a discount. This should likely be accompanied by an
+  // action to load that discount and additional conditions to check the name,
+  // type, and offer type of the discount.
+  $conditions['commerce_discount_line_item_added_by_discount'] = array(
+    'label' => t('Line item added by discount'),
+    'parameter' => array(
+      'commerce_line_item' => array(
+        'type' => 'commerce_line_item',
+        'label' => t('Line item'),
+      ),
+    ),
+    'group' => t('Commerce Line Item'),
+  );
+
   return $conditions;
 }
 
@@ -540,6 +555,13 @@ function commerce_product_has_specified_terms_build(EntityDrupalWrapper $wrapper
   }
 
   return empty($terms_name);
+}
+
+/**
+ * Condition callback: looks to see if the line item was added by a discount.
+ */
+function commerce_discount_line_item_added_by_discount($line_item) {
+  return !empty($line_item->data['discount_name']);
 }
 
 /**
