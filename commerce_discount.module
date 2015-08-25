@@ -18,8 +18,8 @@ function commerce_discount_commerce_cart_order_refresh($wrapper) {
   $cloned_line_items = array();
   // Remove all discount references from the order.
   // (If there are none, setting array() would modify the order, so test first.)
-  if ($wrapper->__isset('commerce_discounts') && $wrapper->commerce_discounts->value()) {
-    $wrapper->commerce_discounts->set(array());
+  if (isset($wrapper->commerce_discounts) && $wrapper->commerce_discounts->value()) {
+    $wrapper->commerce_discounts = array();
   }
 
   // Remove discount components from the order total price.

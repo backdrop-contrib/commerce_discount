@@ -576,7 +576,7 @@ function commerce_discount_fixed_amount(EntityDrupalWrapper $wrapper, $discount_
     case 'commerce_order':
 
       // Exit if the wrapper doesn't have a commerce_discounts property.
-      if (!$wrapper->__isset('commerce_discounts')) {
+      if (!isset($wrapper->commerce_discounts)) {
         return;
       }
 
@@ -642,7 +642,7 @@ function commerce_discount_percentage(EntityDrupalWrapper $wrapper, $discount_na
 
       // Exit if there are no line items or the wrapper doesn't contain
       // the commerce_discounts property.
-      if (!$wrapper->commerce_line_items->value() || !$wrapper->__isset('commerce_discounts')) {
+      if (!isset($wrapper->commerce_discounts) || !$wrapper->commerce_line_items->value()) {
         return;
       }
 
@@ -838,7 +838,7 @@ function commerce_discount_free_products(EntityDrupalWrapper $wrapper, $discount
   }
 
   // Exit if the wrapper doesn't have a commerce_discounts property.
-  if (!$wrapper->__isset('commerce_discounts')) {
+  if (!isset($wrapper->commerce_discounts)) {
     return;
   }
 
