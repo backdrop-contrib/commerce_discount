@@ -73,6 +73,13 @@ function commerce_discount_schema() {
         'length' => 255,
         'not null' => FALSE,
       ),
+      'sort_order' => array(
+        'description' => 'The discount sort order.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 10,
+        'size' => 'tiny',
+      ),
     ),
     'primary key' => array('discount_id'),
     'unique keys' => array(
@@ -504,4 +511,20 @@ function commerce_discount_update_7104() {
   ));
   // Rebuild the schema.
   drupal_get_complete_schema(TRUE);
+}
+
+/**
+ * Add a sort order column to the Commerce Discount table.
+ */
+function commerce_discount_update_7105() {
+  $field_schema = array(
+    'description' => 'The discount sort order.',
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => 10,
+    'size' => 'tiny',
+  );
+  db_add_field('commerce_discount', 'sort_order', $field_schema);
+
+  return t('Sort order added to the Commerce Discount table.');
 }

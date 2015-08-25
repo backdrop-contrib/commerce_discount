@@ -378,6 +378,7 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
   "type" : "product_discount",
   "status" : "1",
   "component_title" : "pf",
+  "sort_order" : "10",
   "commerce_discount_offer" : {
     "type" : "fixed_amount",
     "commerce_fixed_amount" : { "und" : [

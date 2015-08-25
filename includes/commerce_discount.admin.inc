@@ -189,6 +189,15 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
     '#default_value' => $commerce_discount->status,
   );
 
+  // Add the sort order select list.
+  $form['sort_order'] = array(
+    '#type' => 'select',
+    '#title' => t('Sort order'),
+    '#description' => t('Discounts will be sorted by this value to be evaluated in that order.'),
+    '#options' => drupal_map_assoc(range(1, 21)),
+    '#default_value' => !empty($commerce_discount->sort_order) ? $commerce_discount->sort_order : 10,
+  );
+
   // Show a list of commerce discounts.
   $form['commerce_discount_type'] = array(
     '#title' => t('Choose discount type'),

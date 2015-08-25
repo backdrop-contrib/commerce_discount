@@ -34,6 +34,7 @@ function commerce_discount_default_rules_configuration() {
 
       $rule->label = $discount->label;
       $rule->active = $discount->status;
+      $rule->weight = !empty($discount->sort_order) ? $discount->sort_order - 11 : -1;
       $rule->tags = array('Commerce Discount', check_plain($type['label']));
 
       $rule
