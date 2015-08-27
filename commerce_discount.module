@@ -661,3 +661,50 @@ function commerce_discount_commerce_line_item_type_info() {
 function commerce_discount_line_item_title() {
   return t('Fixed amount discount');
 }
+
+/**
+ * Returns an array of discount compatibility strategies for use in a radio
+ * buttons select list.
+ */
+function commerce_discount_compatibility_strategies() {
+  return array(
+    'any' => t('This discount is compatible with any other discount.'),
+    'except' => t('This discount is compatible with any discount except the selected discounts.'),
+    'only' => t('This discount is only compatible with the selected discounts.'),
+    'none' => t('This discount is not compatible with any other discount.'),
+  );
+}
+
+/**
+ * Returns a list of discounts applied to make a particular price as determined
+ * by its price components.
+ *
+ * @param array $price
+ *   A price field value array including a data array with price components.
+ *
+ * @return array
+ */
+function commerce_discount_applied_to_price($price) {
+  $applied_discounts = array();
+
+  // Return early if the price has no components.
+  if (empty($price['data']['components'])) {
+    return array();
+  }
+
+  // Loop over the price components looking for known discount components.
+  foreach ($price['data']['components'] as $component) {
+    if (strpos($component['name'], 'discount|') === 0) {
+      // Load the discount entity represented by this component.
+      $applied_discount_name = substr($component['name'], 9);
+      $applied_discount = entity_load_single('commerce_discount', $applied_discount_name);
+
+      // Add it to the list of applied discounts keyed by ID to prevent duplicates.
+      if (!empty($applied_discount)) {
+        $applied_discounts[$applied_discount->discount_id] = $applied_discount_name;
+      }
+    }
+  }
+
+  return $applied_discounts;
+}

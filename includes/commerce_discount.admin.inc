@@ -240,6 +240,16 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
     $field_form['#attributes']['class'][] = 'commerce-discount-box';
   }
 
+  // Add visibility states to the discount compatibility selection field.
+  $form['commerce_discount_fields']['commerce_compatibility_selection']['#states'] = array(
+    'visible' => array(
+      ':input[name="commerce_discount_fields[commerce_compatibility_strategy][und]"]' => array(
+        array('value' => 'except'),
+        array('value' => 'only'),
+      ),
+    ),
+  );
+
   $form['actions'] = array('#type' => 'actions');
   $form['actions']['submit'] = array(
     '#type' => 'submit',

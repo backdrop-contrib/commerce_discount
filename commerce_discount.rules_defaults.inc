@@ -46,6 +46,15 @@ function commerce_discount_default_rules_configuration() {
           )
         );
 
+      // Add the compatibility condition to all discounts. Even if the current
+      // discount is compatible with any other discount, we need to prevent it
+      // from being added if a previously applied discount indicates it is not
+      // compatible with the current one.
+      $rule->condition('commerce_discount_compatibility_check', array(
+        'commerce_order:select' => $type['entity type'] == 'commerce_order' ? 'commerce-order' : 'commerce-line-item:order',
+        'commerce_discount' => $discount->name,
+      ));
+
       // Let other modules alter the rule object, with configuration specific
       // to commerce discount. We don't invoke an alter function, as it can
       // be already achieved by implementing

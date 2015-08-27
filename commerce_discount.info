@@ -7,6 +7,9 @@ dependencies[] = number
 dependencies[] = entity
 dependencies[] = entityreference
 dependencies[] = inline_entity_form (>=1.5)
+dependencies[] = list
+dependencies[] = options
+dependencies[] = text
 dependencies[] = views
 dependencies[] = commerce
 dependencies[] = commerce_price

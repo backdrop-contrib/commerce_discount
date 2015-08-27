@@ -97,7 +97,7 @@ class CommerceDiscountTestBase extends CommerceBaseTestCase {
    * @return object
    *   The newly created commerce_discount entity.
    */
-  protected function createDiscount($discount_type, $offer_type, $amount, $name = '', $component_title = '') {
+  protected function createDiscount($discount_type, $offer_type, $amount, $name = '', $component_title = '', $sort_order = 10) {
     // Create the discount offer.
     $commerce_discount_offer = entity_create('commerce_discount_offer', array('type' => $offer_type));
     $offer_wrapper = entity_metadata_wrapper('commerce_discount_offer', $commerce_discount_offer);
@@ -128,6 +128,7 @@ class CommerceDiscountTestBase extends CommerceBaseTestCase {
       'name' => $name,
       'label' => $name,
       'type' => $discount_type,
+      'sort_order' => $sort_order,
       'component_title' => $component_title,
       'status' => TRUE,
       'export_status' => TRUE,
@@ -140,6 +141,27 @@ class CommerceDiscountTestBase extends CommerceBaseTestCase {
     return $discount_wrapper->value();
   }
 
+  /**
+   * Determines whether or not a discount has been applied to an order.
+   *
+   * @param $discount_name
+   *   The machine-name of the discount to look for.
+   * @param $order
+   *   The order object to inspect for the discount.
+   *
+   * @return bool
+   *   Boolean indicating whether or not the discount is applied to the order.
+   */
+  public function discountAppliedToOrder($discount_name, $order) {
+    // Fetch the list of discounts applied to the order based on the price
+    // components in its order total array.
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $order_total = $order_wrapper->commerce_order_total->value();
+    $applied_discounts = commerce_discount_applied_to_price($order_total);
+
+    // Look for the given discount in the list of applied discounts.
+    return in_array($discount_name, $applied_discounts);
+  }
 }
 
 /**
@@ -153,7 +175,7 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
     return array(
       'name' => 'Discounts',
       'description' => 'Test discounts UI and functionality',
-      'group' => 'Commerce discounts',
+      'group' => 'Commerce Discount',
     );
   }
 
@@ -390,6 +412,8 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
       ]
     }
   },
+  "commerce_compatibility_strategy" : { "und" : [ { "value" : "any" } ] },
+  "commerce_compatibility_selection" : [],
   "inline_conditions" : []
 }';
 
@@ -599,4 +623,99 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
     $this->assertTrue($order_wrapper->commerce_line_items->count() == 3, 'After updating the order it still has three line items.');
   }
 
+  /**
+   * Test discount compatibility strategies.
+   *
+   * Currently implemented strategies include:
+   * - any: discount is compatible with any other discount.
+   * - except: discount is compatible with any discount except selected ones.
+   * - only: discount is only compatible with selected ones.
+   * - none: discount is not compatible with any other discount.
+   *
+   * Compatibility is checked first to ensure that discounts already on an order
+   * are not incompatible with the discount being added. It is then checked to
+   * ensure the discount being added is not incompatible with any discount that
+   * has already been added to the order.
+   */
+  public function testCommerceDiscountCompatibilityStrategies() {
+    // Create two discounts set to execute one after the other.
+    $discount_one = $this->createDiscount('order_discount', 'fixed_amount', 100, 'of1', 1);
+    $discount_one_wrapper = entity_metadata_wrapper('commerce_discount', $discount_one);
+    $discount_two = $this->createDiscount('order_discount', 'fixed_amount', 200, 'of2', 2);
+    $discount_two_wrapper = entity_metadata_wrapper('commerce_discount', $discount_two);
+
+    // Create an order and recalculate discounts.
+    $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'completed');
+
+    // Test compatibility with both discounts using the "any" strategy. Both
+    // discounts should be applied.
+    commerce_cart_order_refresh($order);
+
+    $properly_applied = $this->discountAppliedToOrder('of1', $order) && $this->discountAppliedToOrder('of2', $order);
+    $this->assertTrue($properly_applied, t('Discount one and two applied when both are compatible with any discount.'));
+
+    // Test compatibility with only discount one using the "none" strategy. Only
+    // discount one should be applied.
+    $discount_one_wrapper->commerce_compatibility_strategy = 'none';
+    $discount_one_wrapper->save();
+    commerce_cart_order_refresh($order);
+
+    $properly_applied = $this->discountAppliedToOrder('of1', $order) && !$this->discountAppliedToOrder('of2', $order);
+    $this->assertTrue($properly_applied, t('Only discount one applied when it is not compatible with any other discount.'));
+
+    // Test compatibility with only discount two using the "none" strategy. Only
+    // discount one should be applied.
+    $discount_one_wrapper->commerce_compatibility_strategy = 'any';
+    $discount_one_wrapper->save();
+    $discount_two_wrapper->commerce_compatibility_strategy = 'none';
+    $discount_two_wrapper->save();
+    commerce_cart_order_refresh($order);
+
+    $properly_applied = $this->discountAppliedToOrder('of1', $order) && !$this->discountAppliedToOrder('of2', $order);
+    $this->assertTrue($properly_applied, t('Only discount one applied when discount two is not compatible with any other discount.'));
+
+    // Test compatibility with discount one compatible with any discount
+    // except discount two. Only discount one should be applied.
+    $discount_one_wrapper->commerce_compatibility_strategy = 'except';
+    $discount_one_wrapper->commerce_compatibility_selection = array($discount_two->discount_id);
+    $discount_one_wrapper->save();
+    $discount_two_wrapper->commerce_compatibility_strategy = 'any';
+    $discount_two_wrapper->save();
+    commerce_cart_order_refresh($order);
+
+    $properly_applied = $this->discountAppliedToOrder('of1', $order) && !$this->discountAppliedToOrder('of2', $order);
+    $this->assertTrue($properly_applied, t('Only discount one applied when it is compatible with any discount except discount two.'));
+
+    // Test compatibility with discount two compatible with any discount
+    // except discount one. Only discount one should be applied.
+    $discount_one_wrapper->commerce_compatibility_strategy = 'any';
+    $discount_one_wrapper->save();
+    $discount_two_wrapper->commerce_compatibility_strategy = 'except';
+    $discount_two_wrapper->commerce_compatibility_selection = array($discount_one->discount_id);
+    $discount_two_wrapper->save();
+    commerce_cart_order_refresh($order);
+
+    $properly_applied = $this->discountAppliedToOrder('of1', $order) && !$this->discountAppliedToOrder('of2', $order);
+    $this->assertTrue($properly_applied, t('Only discount one applied when it is compatible with any discount and discount two is compatible with any discount except discount one.'));
+
+    // Test compatibility with discount two compatible with only discount
+    // one. Both discounts should be applied.
+    $discount_two_wrapper->commerce_compatibility_strategy = 'only';
+    $discount_two_wrapper->save();
+    commerce_cart_order_refresh($order);
+
+    $properly_applied = $this->discountAppliedToOrder('of1', $order) && $this->discountAppliedToOrder('of2', $order);
+    $this->assertTrue($properly_applied, t('Both discounts applied when discount one is compatible with any discount and discount two is compatible only with discount one.'));
+
+    // Test compatibility with discount two compatible with only discount
+    // one. Both discounts should be applied.
+    $discount_one_wrapper->commerce_compatibility_strategy = 'only';
+    $discount_one_wrapper->save();
+    $discount_two_wrapper->commerce_compatibility_strategy = 'any';
+    $discount_two_wrapper->save();
+    commerce_cart_order_refresh($order);
+
+    $properly_applied = $this->discountAppliedToOrder('of1', $order) && $this->discountAppliedToOrder('of2', $order);
+    $this->assertTrue($properly_applied, t('Both discounts applied when discount one is only compatible with discount two and discount two is compatible with any discount.'));
+  }
 }

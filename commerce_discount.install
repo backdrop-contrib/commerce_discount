@@ -152,8 +152,8 @@ function commerce_discount_install_helper() {
     $field_types = field_info_field_types();
   }
 
+  // Create the discount offer entity reference field for use on all discounts.
   if (empty($fields['commerce_discount_offer']) && isset($field_types['entityreference'])) {
-    // Create entity reference field.
     $field = array(
       'entity_types' => array('commerce_discount'),
       'settings' => array(
@@ -171,6 +171,43 @@ function commerce_discount_install_helper() {
     );
     field_create_field($field);
   }
+
+  // Create the discount compatibility strategy field for use on all discounts.
+  if (empty($fields['commerce_compatibility_strategy'])) {
+    $field = array(
+      'type' => 'list_text',
+      'field_name' => 'commerce_compatibility_strategy',
+      'locked' => TRUE,
+      'settings' => array(
+        'allowed_values' => array(),
+        'allowed_values_function' => 'commerce_discount_compatibility_strategies',
+      ),
+    );
+    field_create_field($field);
+  }
+
+  // Create the selected discounts field for use on all discounts.
+  if (empty($fields['commerce_compatibility_selection'])) {
+    $field = array(
+      'type' => 'entityreference',
+      'field_name' => 'commerce_compatibility_selection',
+      'cardinality' => FIELD_CARDINALITY_UNLIMITED,
+      'locked' => TRUE,
+      'settings' => array(
+        'target_type' => 'commerce_discount',
+        'handler' => 'base',
+        'handler_settings' => array(
+          'sort' => array(
+            'type' => 'property',
+            'property' => 'label',
+            'direction' => 'ASC',
+          ),
+        ),
+      ),
+    );
+    field_create_field($field);
+  }
+
   if (empty($fields['commerce_fixed_amount'])) {
     // Add price field to the commerce discount offer "fixed_amount" bundle.
     $field = array(
@@ -285,7 +322,41 @@ function commerce_discount_install_helper() {
       );
       field_create_instance($instance);
     }
+    if (empty($instances['commerce_discount'][$type]['commerce_compatibility_strategy'])) {
+      $instance = array(
+        'field_name' => 'commerce_compatibility_strategy',
+        'label' => t('Compatibility with other discounts'),
+        'entity_type' => 'commerce_discount',
+        'bundle' => $type,
+        'required' => TRUE,
+        'widget' => array(
+          'weight' => -10,
+          'type' => 'options_buttons',
+          'module' => 'options',
+        ),
+        'default_value' => array(
+          0 => array('value' => 'any'),
+        ),
+      );
+      field_create_instance($instance);
+    }
+    if (empty($instances['commerce_discount'][$type]['commerce_compatibility_selection'])) {
+      $instance = array(
+        'field_name' => 'commerce_compatibility_selection',
+        'label' => t('Selected discounts'),
+        'entity_type' => 'commerce_discount',
+        'bundle' => $type,
+        'required' => FALSE,
+        'widget' => array(
+          'weight' => -9,
+          'type' => 'entityreference_autocomplete',
+          'module' => 'entityreference',
+        ),
+      );
+      field_create_instance($instance);
+    }
   }
+
   if (empty($instances['commerce_discount_offer']['fixed_amount']['commerce_fixed_amount'])) {
     $instance = array(
       'field_name' => 'commerce_fixed_amount',
@@ -527,4 +598,89 @@ function commerce_discount_update_7105() {
   db_add_field('commerce_discount', 'sort_order', $field_schema);
 
   return t('Sort order added to the Commerce Discount table.');
+}
+
+/**
+ * Add discount compatibility fields to all discount types.
+ */
+function commerce_discount_update_7106() {
+  $fields = field_read_fields(array(), array('include_inactive' => TRUE));
+
+  // Create the discount compatibility strategy field for use on all discounts.
+  if (empty($fields['commerce_compatibility_strategy'])) {
+    $field = array(
+      'type' => 'list_text',
+      'field_name' => 'commerce_compatibility_strategy',
+      'locked' => TRUE,
+      'settings' => array(
+        'allowed_values' => array(),
+        'allowed_values_function' => 'commerce_discount_compatibility_strategies',
+      ),
+    );
+    field_create_field($field);
+  }
+
+  // Create the selected discounts field for use on all discounts.
+  if (empty($fields['commerce_compatibility_selection'])) {
+    $field = array(
+      'type' => 'entityreference',
+      'field_name' => 'commerce_compatibility_selection',
+      'cardinality' => FIELD_CARDINALITY_UNLIMITED,
+      'locked' => TRUE,
+      'settings' => array(
+        'target_type' => 'commerce_discount',
+        'handler' => 'base',
+        'handler_settings' => array(
+          'sort' => array(
+            'type' => 'property',
+            'property' => 'label',
+            'direction' => 'ASC',
+          ),
+        ),
+      ),
+    );
+    field_create_field($field);
+  }
+
+  field_sync_field_status();
+  field_info_cache_clear();
+  $instances = field_info_instances();
+
+  foreach (commerce_discount_types() as $type => $value) {
+    if (empty($instances['commerce_discount'][$type]['commerce_compatibility_strategy'])) {
+      $instance = array(
+        'field_name' => 'commerce_compatibility_strategy',
+        'label' => t('Compatibility with other discounts'),
+        'entity_type' => 'commerce_discount',
+        'bundle' => $type,
+        'required' => TRUE,
+        'widget' => array(
+          'weight' => -10,
+          'type' => 'options_buttons',
+          'module' => 'options',
+        ),
+        'default_value' => array(
+          0 => array('value' => 'any'),
+        ),
+      );
+      field_create_instance($instance);
+    }
+    if (empty($instances['commerce_discount'][$type]['commerce_compatibility_selection'])) {
+      $instance = array(
+        'field_name' => 'commerce_compatibility_selection',
+        'label' => t('Selected discounts'),
+        'entity_type' => 'commerce_discount',
+        'bundle' => $type,
+        'required' => FALSE,
+        'widget' => array(
+          'weight' => -9,
+          'type' => 'entityreference_autocomplete',
+          'module' => 'entityreference',
+        ),
+      );
+      field_create_instance($instance);
+    }
+  }
+
+  return t('Discount compatibility fields added to all discount types.');
 }

@@ -12,6 +12,26 @@ function commerce_discount_rules_condition_info() {
   $inline_conditions = inline_conditions_get_info();
   $conditions = array();
 
+  $conditions['commerce_discount_compatibility_check'] = array(
+    'label' => t('Check discount compatibility'),
+    'parameter' => array(
+      'commerce_order' => array(
+        'type' => 'commerce_order',
+        'label' => t('Order'),
+        'description' => t('The order the discount would be applied to.'),
+        'wrapped' => TRUE,
+      ),
+      'commerce_discount' => array(
+        'type' => 'token',
+        'label' => t('Discount'),
+        'description' => t('A discount with a compatibility strategy that requires evaluation.'),
+        'options list' => 'commerce_discount_entity_list',
+        'wrapped' => TRUE,
+      ),
+    ),
+    'group' => t('Commerce Discount'),
+  );
+
   if (module_exists('commerce_order')) {
     $conditions['commerce_order_compare_order_amount'] = array(
       'label' => t('Order amount comparison'),
@@ -315,6 +335,98 @@ function commerce_discount_rules_event_info() {
   );
 
   return $items;
+}
+
+/**
+ * Rules callback: executes the "Check discount compatibility" condition.
+ *
+ * @param \EntityDrupalWrapper $order_wrapper
+ *   The order the discount would be applied to.
+ * @param \EntityDrupalWrapper $discount_wrapper
+ *   The discount whose compatibility needs to be checked.
+ */
+function commerce_discount_compatibility_check(EntityDrupalWrapper $order_wrapper, $discount_name) {
+  // Ensure the discount we're loading still exists.
+  if (!$discount = entity_load_single('commerce_discount', $discount_name)) {
+    return FALSE;
+  }
+
+  // Get the strategy from the compatibility strategy field.
+  $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+  $strategy = $discount_wrapper->commerce_compatibility_strategy->value();
+
+  // Determine which discounts have been applied to the order thus far.
+  $order_total = $order_wrapper->commerce_order_total->value();
+  $applied_discounts = commerce_discount_applied_to_price($order_total);
+
+  // Ensure none of them indicate they are incompatible with the current one.
+  foreach ($applied_discounts as $applied_discount_id => $applied_discount_name) {
+    // Determine the strategy of the existing discount.
+    $existing_discount = entity_load_single('commerce_discount', $applied_discount_name);
+    $existing_discount_wrapper = entity_metadata_wrapper('commerce_discount', $existing_discount);
+    $existing_strategy = $existing_discount_wrapper->commerce_compatibility_strategy->value();
+
+    // If the discount is compatible with any other discount, continue on.
+    if ($existing_strategy == 'any') {
+      continue;
+    }
+
+    // If the discount is not compatible with any other discount, return FALSE.
+    if ($existing_strategy == 'none') {
+      return FALSE;
+    }
+
+    // Get the selected discount value from the existing discount.
+    $existing_selection = $existing_discount_wrapper->commerce_compatibility_selection->raw();
+
+    // If the discount is incompatible with select discounts and the current
+    // discount was selected, return FALSE.
+    if ($existing_strategy == 'except' && in_array($discount->discount_id, $existing_selection)) {
+      return FALSE;
+    }
+
+    // If the discount is only compatible with select discounts and the current
+    // discount was not selected, return FALSE.
+    if ($existing_strategy == 'only' && !in_array($discount->discount_id, $existing_selection)) {
+      return FALSE;
+    }
+  }
+
+  // If the discount is not compatible with any other discount and we found
+  // applied discounts, return FALSE.
+  if ($strategy == 'none' && count($applied_discounts) > 0) {
+    return FALSE;
+  }
+
+  // Get the selected discount value from the disocunt being evaluated.
+  $selection = $discount_wrapper->commerce_compatibility_selection->raw();
+
+  // If the discount is not compatible with selected discounts, ensure they
+  // are not on the order.
+  if ($strategy == 'except') {
+    foreach ($applied_discounts as $applied_discount_id => $applied_discount_name) {
+      if (in_array($applied_discount_id, $selection)) {
+        return FALSE;
+      }
+    }
+  }
+
+  // If the discount is only compatible with selected discounts, ensure no other
+  // discounts are on the order.
+  if ($strategy == 'only') {
+    foreach ($applied_discounts as $applied_discount_id => $applied_discount_name) {
+      if (!in_array($applied_discount_id, $selection)) {
+        return FALSE;
+      }
+    }
+  }
+
+  // Return TRUE if nothing has disqualified compatibility yet. For example, if
+  // the discount is compatible with any other discount and no other discounts
+  // on the order specifies an incompatibility with this discount or if this
+  // discount were incompatible with other discounts but none have been applied
+  // to the order yet.
+  return TRUE;
 }
 
 /**
