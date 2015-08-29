@@ -676,6 +676,53 @@ function commerce_discount_compatibility_strategies() {
 }
 
 /**
+ * Returns the compatibility strategy for the given discount.
+ *
+ * @param \CommerceDiscount $discount
+ *   A Commerce Discount object with a commerce_compatibility_strategy field.
+ *
+ * @return string
+ *   The discount's compatibility strategy or 'any' if none is set.
+ */
+function commerce_discount_get_compatibility_strategy($discount) {
+  $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+  $strategy = $discount_wrapper->commerce_compatibility_strategy->value();
+
+  // If the compatibility strategy is not set, default to 'any'.
+  if (empty($strategy)) {
+    $strategy = 'any';
+  }
+
+  // Note that if the field is set to an unknown value, we still return it. The
+  // default condition for evaluating discount compatibility will pass through
+  // unknown discount strategies, so modules that set them are responsible also
+  // to evaluate them on behalf of all discounts.
+  return $strategy;
+}
+
+/**
+ * Returns the compatibility selection for the given discount.
+ *
+ * @param \CommerceDiscount $discount
+ *   A Commerce Discount object with a commerce_compatibility_selection field.
+ *
+ * @return int[]
+ *   An array of discount IDs selected for the discount's compatibility strategy
+ *   or an empty array if none are selected (or a non-array value is found).
+ */
+function commerce_discount_get_compatibility_selection($discount) {
+  $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+  $selection = $discount_wrapper->commerce_compatibility_selection->raw();
+
+  // Ensure the selection is an array.
+  if (!is_array($selection)) {
+    $selection = array();
+  }
+
+  return $selection;
+}
+
+/**
  * Returns a list of discounts applied to make a particular price as determined
  * by its price components.
  *
@@ -684,7 +731,7 @@ function commerce_discount_compatibility_strategies() {
  *
  * @return array
  */
-function commerce_discount_applied_to_price($price) {
+function commerce_discount_get_discounts_applied_to_price($price) {
   $applied_discounts = array();
 
   // Return early if the price has no components.

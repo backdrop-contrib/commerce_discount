@@ -352,19 +352,17 @@ function commerce_discount_compatibility_check(EntityDrupalWrapper $order_wrappe
   }
 
   // Get the strategy from the compatibility strategy field.
-  $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount);
-  $strategy = $discount_wrapper->commerce_compatibility_strategy->value();
+  $strategy = commerce_discount_get_compatibility_strategy($discount);
 
   // Determine which discounts have been applied to the order thus far.
   $order_total = $order_wrapper->commerce_order_total->value();
-  $applied_discounts = commerce_discount_applied_to_price($order_total);
+  $applied_discounts = commerce_discount_get_discounts_applied_to_price($order_total);
 
   // Ensure none of them indicate they are incompatible with the current one.
   foreach ($applied_discounts as $applied_discount_id => $applied_discount_name) {
     // Determine the strategy of the existing discount.
     $existing_discount = entity_load_single('commerce_discount', $applied_discount_name);
-    $existing_discount_wrapper = entity_metadata_wrapper('commerce_discount', $existing_discount);
-    $existing_strategy = $existing_discount_wrapper->commerce_compatibility_strategy->value();
+    $existing_strategy = commerce_discount_get_compatibility_strategy($existing_discount);
 
     // If the discount is compatible with any other discount, continue on.
     if ($existing_strategy == 'any') {
@@ -377,7 +375,7 @@ function commerce_discount_compatibility_check(EntityDrupalWrapper $order_wrappe
     }
 
     // Get the selected discount value from the existing discount.
-    $existing_selection = $existing_discount_wrapper->commerce_compatibility_selection->raw();
+    $existing_selection = commerce_discount_get_compatibility_selection($existing_discount);
 
     // If the discount is incompatible with select discounts and the current
     // discount was selected, return FALSE.
@@ -399,7 +397,7 @@ function commerce_discount_compatibility_check(EntityDrupalWrapper $order_wrappe
   }
 
   // Get the selected discount value from the disocunt being evaluated.
-  $selection = $discount_wrapper->commerce_compatibility_selection->raw();
+  $selection = commerce_discount_get_compatibility_selection($discount);
 
   // If the discount is not compatible with selected discounts, ensure they
   // are not on the order.

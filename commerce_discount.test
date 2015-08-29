@@ -157,7 +157,7 @@ class CommerceDiscountTestBase extends CommerceBaseTestCase {
     // components in its order total array.
     $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
     $order_total = $order_wrapper->commerce_order_total->value();
-    $applied_discounts = commerce_discount_applied_to_price($order_total);
+    $applied_discounts = commerce_discount_get_discounts_applied_to_price($order_total);
 
     // Look for the given discount in the list of applied discounts.
     return in_array($discount_name, $applied_discounts);
