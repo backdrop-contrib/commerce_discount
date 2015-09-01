@@ -866,8 +866,8 @@ function commerce_discount_percent_off_shipping_service($order, $discount_name) 
   // Load the shipping service, if one was selected.
   $shipping_service_to_discount = $discount_wrapper->commerce_discount_offer->commerce_percent_off_ship_serv->value();
 
-  // Get the discount label for later usage.
-  $discount_label = $discount_wrapper->value()->label;
+  // Get the discount component title for later usage.
+  $discount_label = check_plain($discount_wrapper->component_title->value());
 
   // Determine the discount multiplifer based on submitted value.
   $discount_value = $discount_wrapper->commerce_discount_offer->commerce_percent_off_shipping->value();
