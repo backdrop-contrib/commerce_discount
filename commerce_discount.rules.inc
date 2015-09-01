@@ -304,6 +304,24 @@ function commerce_discount_rules_action_info() {
     'base' => 'commerce_discount_percent_off_shipping_service',
   );
 
+  $items['commerce_discount_shipping_upgrade'] = array(
+    'label' => t('Shipping service upgrade'),
+    'group' => t('Commerce Discount'),
+    'parameter' => array(
+      'entity' => array(
+        'label' => t('Entity'),
+        'type' => 'entity',
+        'wrapped' => FALSE,
+      ),
+      'commerce_discount' => array(
+        'label' => t('Commerce Discount'),
+        'type' => 'token',
+        'options list' => 'commerce_discount_entity_list',
+      ),
+    ),
+    'base' => 'commerce_discount_shipping_upgrade',
+  );
+
   return $items;
 }
 
@@ -315,21 +333,21 @@ function commerce_discount_rules_event_info() {
 
   $items['commerce_discount_order'] = array(
     'label' => t('Apply a discount to a given order'),
-    'group' => t('Commerce - discount'),
+    'group' => t('Commerce Discount'),
     'variables' => entity_rules_events_variables('commerce_order', t('Order', array(), array('context' => 'a drupal commerce order'))),
     'access callback' => 'commerce_order_rules_access',
   );
 
   $items['commerce_discount_free_shipping'] = array(
     'label' => t('Makes a shipping service free'),
-    'group' => t('Commerce - discount'),
+    'group' => t('Commerce Discount'),
     'variables' => entity_rules_events_variables('commerce_order', t('Order', array(), array('context' => 'a drupal commerce order'))),
     'access callback' => 'commerce_order_rules_access',
   );
 
   $items['commerce_discount_percent_off_shipping'] = array(
     'label' => t('% off of a shipping service'),
-    'group' => t('Commerce - discount'),
+    'group' => t('Commerce Discount'),
     'variables' => entity_rules_events_variables('commerce_order', t('Order', array(), array('context' => 'a drupal commerce order'))),
     'access callback' => 'commerce_order_rules_access',
   );
@@ -930,7 +948,75 @@ function commerce_discount_percent_off_shipping_service($order, $discount_name) 
       );
     }
   }
+}
 
+/**
+ * Rules action: apply a shipping service upgrade discount.
+ *
+ * @param object $order
+ *   The order object whose discounts are being applied.
+ * @param string $discount_name
+ *   The name of the shipping service upgrade discount.
+ */
+function commerce_discount_shipping_upgrade($order, $discount_name) {
+  // If the order has had shipping rates calculated for it.
+  if (!empty($order->shipping_rates)) {
+    // Load the discount to find the target and source services.
+    $discount = entity_load_single('commerce_discount', $discount_name);
+    $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+
+    try {
+      $target_service = $discount_wrapper->commerce_discount_offer->commerce_shipping_upgrade_target->raw();
+      $source_service = $discount_wrapper->commerce_discount_offer->commerce_shipping_upgrade_source->raw();
+    }
+    catch (Exception $e) {
+      return;
+    }
+
+    // Exit now if we either could not determine a target or source service or
+    // if they were not calculated for this order.
+    if (empty($target_service) || empty($order->shipping_rates[$target_service]) ||
+      empty($source_service) || empty($order->shipping_rates[$source_service])) {
+      return;
+    }
+
+    // Get the calculated rates from both items.
+    $target_line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $order->shipping_rates[$target_service]);
+    $source_line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $order->shipping_rates[$source_service]);
+
+    // If the prices are already the same, exit now.
+    if ($target_line_item_wrapper->commerce_unit_price->amount->value() == $source_line_item_wrapper->commerce_unit_price->amount->value()) {
+      return;
+    }
+
+    // Otherwise, calculate the difference between the source and the target.
+    $difference = $source_line_item_wrapper->commerce_unit_price->amount->value() - $target_line_item_wrapper->commerce_unit_price->amount->value();
+
+    // Update the target shipping service line item's rate to match the source
+    // line item's rate using the price component type of the target rate but
+    // a price array that will ensure the discount title gets swapped in for the
+    // price component when the rate is formatted accordingly.
+    $target_line_item_wrapper->commerce_unit_price->amount = $source_line_item_wrapper->commerce_unit_price->amount->value();
+    $order->shipping_rates[$target_service]->data['shipping_service']['description'] .= ' <span class="shipping-discount-text">' . check_plain($discount->component_title) . '</span>';
+
+    $shipping_service = commerce_shipping_service_load($target_service);
+
+    $discount_price = array(
+      'amount' => $difference,
+      'currency_code' => $target_line_item_wrapper->commerce_unit_price->currency_code->value(),
+      'data' => array(
+        'discount_component_title' => check_plain($discount->component_title),
+      ),
+    );
+
+    $target_line_item_wrapper->commerce_unit_price->data = commerce_price_component_add(
+      $target_line_item_wrapper->commerce_unit_price->value(),
+      $shipping_service['price_component'],
+      $discount_price,
+      TRUE,
+      FALSE
+    );
+  }
 }
 
 /**

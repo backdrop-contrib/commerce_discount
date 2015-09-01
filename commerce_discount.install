@@ -255,35 +255,69 @@ function commerce_discount_install_helper() {
     );
     field_create_field($field);
   }
-  // Creating field for free shipping offer type.
-  if (module_exists('commerce_shipping') && empty($fields['commerce_free_shipping'])) {
-    $field = array(
-      'entity_types' => array('commerce_discount_offer'),
-      'field_name' => 'commerce_free_shipping',
-      'type' => 'text',
-      'locked' => TRUE,
-    );
-    field_create_field($field);
-  }
-  // Creating field for percent off of shipping.
-  if (module_exists('commerce_shipping') && empty($fields['commerce_percent_off_shipping'])) {
-    $field = array(
-      'entity_types' => array('commerce_discount_offer'),
-      'field_name' => 'commerce_percent_off_shipping',
-      'type' => 'number_decimal',
-      'locked' => TRUE,
-    );
-    field_create_field($field);
-  }
-  // Creating field for percent off of shipping.
-  if (module_exists('commerce_shipping') && empty($fields['commerce_percent_off_ship_serv'])) {
-    $field = array(
-      'entity_types' => array('commerce_discount_offer'),
-      'field_name' => 'commerce_percent_off_ship_serv',
-      'type' => 'text',
-      'locked' => TRUE,
-    );
-    field_create_field($field);
+
+  // Create fields for the shipping related offer types.
+  if (module_exists('commerce_shipping')) {
+    // Creating the shipping service text field for the "Free shipping" offer.
+    if (empty($fields['commerce_free_shipping'])) {
+      $field = array(
+        'entity_types' => array('commerce_discount_offer'),
+        'field_name' => 'commerce_free_shipping',
+        'type' => 'text',
+        'locked' => TRUE,
+      );
+      field_create_field($field);
+    }
+
+    // Create the percentage off and shipping service text fields for the "% off
+    // of shipping" offer.
+    if (empty($fields['commerce_percent_off_shipping'])) {
+      $field = array(
+        'entity_types' => array('commerce_discount_offer'),
+        'field_name' => 'commerce_percent_off_shipping',
+        'type' => 'number_decimal',
+        'locked' => TRUE,
+      );
+      field_create_field($field);
+    }
+    if (empty($fields['commerce_percent_off_ship_serv'])) {
+      $field = array(
+        'entity_types' => array('commerce_discount_offer'),
+        'field_name' => 'commerce_percent_off_ship_serv',
+        'type' => 'text',
+        'locked' => TRUE,
+      );
+      field_create_field($field);
+    }
+
+    // Create the target and source shipping service text fields for the
+    // "Shipping service upgrade" offer.
+    if (empty($fields['commerce_shipping_upgrade_target'])) {
+      $field = array(
+        'entity_types' => array('commerce_discount_offer'),
+        'field_name' => 'commerce_shipping_upgrade_target',
+        'type' => 'list_text',
+        'locked' => TRUE,
+        'settings' => array(
+          'allowed_values' => array(),
+          'allowed_values_function' => 'commerce_shipping_service_options_list',
+        ),
+      );
+      field_create_field($field);
+    }
+    if (empty($fields['commerce_shipping_upgrade_source'])) {
+      $field = array(
+        'entity_types' => array('commerce_discount_offer'),
+        'field_name' => 'commerce_shipping_upgrade_source',
+        'type' => 'list_text',
+        'locked' => TRUE,
+        'settings' => array(
+          'allowed_values' => array(),
+          'allowed_values_function' => 'commerce_shipping_service_options_list',
+        ),
+      );
+      field_create_field($field);
+    }
   }
 
   // Creating field for free products offer type.
@@ -408,45 +442,80 @@ function commerce_discount_install_helper() {
       field_create_instance($instance);
     }
   }
-  if (module_exists('commerce_shipping') && empty($instances['commerce_discount_offer']['free_shipping']['commerce_free_shipping'])) {
-    $instance = array(
-      'field_name' => 'commerce_free_shipping',
-      'entity_type' => 'commerce_discount_offer',
-      'bundle' => 'free_shipping',
-      'label' => t('Shipping service'),
-      'required' => TRUE,
-      'widget' => array(
-        'type' => 'options_select',
-      ),
-    );
-    field_create_instance($instance);
-  }
 
-  if (module_exists('commerce_shipping') && empty($instances['commerce_discount_offer']['percent_off_shipping']['commerce_percent_off_shipping'])) {
-    // Add decimal selection.
-    $instance = array(
-      'field_name' => 'commerce_percent_off_shipping',
-      'entity_type' => 'commerce_discount_offer',
-      'bundle' => 'percent_off_shipping',
-      'label' => t('Percentage off of shipping'),
-      'settings' => array(
-        'suffix' => '%',
-      ),
-      'required' => TRUE,
-    );
-    field_create_instance($instance);
+  // Create field instances for the shipping related offer types.
+  if (module_exists('commerce_shipping')) {
+    // Add the shipping service text field to the "Free shipping" offer.
+    if (empty($instances['commerce_discount_offer']['free_shipping']['commerce_free_shipping'])) {
+      $instance = array(
+        'field_name' => 'commerce_free_shipping',
+        'entity_type' => 'commerce_discount_offer',
+        'bundle' => 'free_shipping',
+        'label' => t('Shipping service'),
+        'required' => TRUE,
+        'widget' => array(
+          'type' => 'options_select',
+        ),
+      );
+      field_create_instance($instance);
+    }
 
-    // Add service selection.
-    $instance = array(
-      'field_name' => 'commerce_percent_off_ship_serv',
-      'entity_type' => 'commerce_discount_offer',
-      'bundle' => 'percent_off_shipping',
-      'label' => t('Shipping service to take % off shipping'),
-      'widget' => array(
-        'type' => 'options_select',
-      ),
-    );
-    field_create_instance($instance);
+    // Add the percentage off and shipping service text fields to the "% off of
+    // shipping" offer.
+    if (empty($instances['commerce_discount_offer']['percent_off_shipping']['commerce_percent_off_shipping'])) {
+      $instance = array(
+        'field_name' => 'commerce_percent_off_shipping',
+        'entity_type' => 'commerce_discount_offer',
+        'bundle' => 'percent_off_shipping',
+        'label' => t('Percentage off of shipping'),
+        'settings' => array(
+          'suffix' => '%',
+        ),
+        'required' => TRUE,
+      );
+      field_create_instance($instance);
+    }
+    if (empty($instances['commerce_discount_offer']['percent_off_shipping']['commerce_percent_off_ship_serv'])) {
+      $instance = array(
+        'field_name' => 'commerce_percent_off_ship_serv',
+        'entity_type' => 'commerce_discount_offer',
+        'bundle' => 'percent_off_shipping',
+        'label' => t('Shipping service to take % off shipping'),
+        'widget' => array(
+          'type' => 'options_select',
+        ),
+      );
+      field_create_instance($instance);
+    }
+
+    // Add the target and source shipping service text fields to the "Shipping
+    // service upgrade" offer.
+    if (empty($instances['commerce_discount_offer']['shipping_upgrade']['commerce_shipping_upgrade_target'])) {
+      $instance = array(
+        'field_name' => 'commerce_shipping_upgrade_target',
+        'entity_type' => 'commerce_discount_offer',
+        'bundle' => 'shipping_upgrade',
+        'label' => t('Let customers select this service'),
+        'required' => TRUE,
+        'widget' => array(
+          'type' => 'options_select',
+        ),
+      );
+      field_create_instance($instance);
+    }
+    if (empty($instances['commerce_discount_offer']['shipping_upgrade']['commerce_shipping_upgrade_source'])) {
+      $instance = array(
+        'field_name' => 'commerce_shipping_upgrade_source',
+        'entity_type' => 'commerce_discount_offer',
+        'bundle' => 'shipping_upgrade',
+        'label' => t('For the same price as this service'),
+        'required' => TRUE,
+        'widget' => array(
+          'type' => 'options_select',
+        ),
+      );
+      field_create_instance($instance);
+    }
   }
 
   if (empty($instances['commerce_discount_offer']['free_products']['commerce_free_products'])) {
@@ -683,4 +752,73 @@ function commerce_discount_update_7106() {
   }
 
   return t('Discount compatibility fields added to all discount types.');
+}
+
+/**
+ * Add fields to support a new "Shipping service upgrade" offer type.
+ */
+function commerce_discount_update_7107() {
+  if (module_exists('commerce_shipping')) {
+    $fields = field_read_fields(array(), array('include_inactive' => TRUE));
+
+    if (empty($fields['commerce_shipping_upgrade_target'])) {
+      $field = array(
+        'entity_types' => array('commerce_discount_offer'),
+        'field_name' => 'commerce_shipping_upgrade_target',
+        'type' => 'list_text',
+        'locked' => TRUE,
+        'settings' => array(
+          'allowed_values' => array(),
+          'allowed_values_function' => 'commerce_shipping_service_options_list',
+        ),
+      );
+      field_create_field($field);
+    }
+    if (empty($fields['commerce_shipping_upgrade_source'])) {
+      $field = array(
+        'entity_types' => array('commerce_discount_offer'),
+        'field_name' => 'commerce_shipping_upgrade_source',
+        'type' => 'list_text',
+        'locked' => TRUE,
+        'settings' => array(
+          'allowed_values' => array(),
+          'allowed_values_function' => 'commerce_shipping_service_options_list',
+        ),
+      );
+      field_create_field($field);
+    }
+
+    field_sync_field_status();
+    field_info_cache_clear();
+    $instances = field_info_instances();
+
+    if (empty($instances['commerce_discount_offer']['shipping_upgrade']['commerce_shipping_upgrade_target'])) {
+      $instance = array(
+        'field_name' => 'commerce_shipping_upgrade_target',
+        'entity_type' => 'commerce_discount_offer',
+        'bundle' => 'shipping_upgrade',
+        'label' => t('Let customers select this service'),
+        'required' => TRUE,
+        'widget' => array(
+          'type' => 'options_select',
+        ),
+      );
+      field_create_instance($instance);
+    }
+    if (empty($instances['commerce_discount_offer']['shipping_upgrade']['commerce_shipping_upgrade_source'])) {
+      $instance = array(
+        'field_name' => 'commerce_shipping_upgrade_source',
+        'entity_type' => 'commerce_discount_offer',
+        'bundle' => 'shipping_upgrade',
+        'label' => t('For the same price as this service'),
+        'required' => TRUE,
+        'widget' => array(
+          'type' => 'options_select',
+        ),
+      );
+      field_create_instance($instance);
+    }
+  }
+
+  return t('Fields added to support the new "Shipping service upgrade" offer type.');
 }
