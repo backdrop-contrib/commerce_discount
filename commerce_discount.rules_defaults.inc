@@ -72,7 +72,14 @@ function commerce_discount_default_rules_configuration() {
       // according to it, in hook_default_rules_configuration_alter().
       $rule->commerce_discount = $discount;
 
-      $rules['commerce_discount_rule_' . $discount->name] = $rule;
+      $rule_machine_name = 'commerce_discount_rule_' . $discount->name;
+      // Ensure the name isn't too long.
+      if (strlen($rule_machine_name) > 64) {
+        // Shorten the name but ensure uniqueness by using a hash.
+        $hash = crc32($discount->name);
+        $rule_machine_name = substr($rule_machine_name, 0, 64 - strlen($hash) - 1) . '_' . $hash;
+      }
+      $rules[$rule_machine_name] = $rule;
     }
   }
 
