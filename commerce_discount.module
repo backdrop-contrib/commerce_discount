@@ -341,6 +341,16 @@ function commerce_discount_field_widget_form_alter(&$element, &$form_state, $con
       }
     }
   }
+
+  // If the current element is the free shipping discount strategy select list,
+  // alter it to only be visible when a free shipping service has been selected.
+  if (!empty($element['#field_name']) && $element['#field_name'] == 'commerce_free_shipping_strategy') {
+    $element['#states'] = array(
+      'invisible' => array(
+        ':input[name="commerce_discount_fields[commerce_discount_offer][' . LANGUAGE_NONE . '][form][commerce_free_shipping][' . LANGUAGE_NONE . ']"]' => array('value' => '_none'),
+      ),
+    );
+  }
 }
 
 /**
@@ -763,4 +773,39 @@ function commerce_discount_get_discounts_applied_to_price($price) {
   }
 
   return $applied_discounts;
+}
+
+/**
+ * Returns a list of discount strategies for free shipping offers.
+ */
+function commerce_discount_free_shipping_strategies() {
+  return array(
+    'only_selected' => t('Only discount the selected shipping service.'),
+    'discount_all' => t('Discount all other shipping services by the same amount as the selected shipping service.'),
+  );
+}
+
+/**
+ * Returns the free shipping strategy for the given discount.
+ *
+ * @param \CommerceDiscount $discount
+ *   A Commerce Discount object with a commerce_free_shipping_strategy field.
+ *
+ * @return string
+ *   The discount's free shipping strategy or 'only_selected' if none is set.
+ */
+function commerce_discount_get_free_shipping_strategy($discount) {
+  $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+  $strategy = $discount_wrapper->commerce_discount_offer->commerce_free_shipping_strategy->value();
+
+  // If the free shipping strategy is not set, default to 'only_selected'.
+  if (empty($strategy)) {
+    $strategy = 'only_selected';
+  }
+
+  // Note that if the field is set to an unknown value, we still return it. The
+  // default action for applying a free shipping discount will pass through
+  // unknown discount strategies, so modules that set them are responsible also
+  // to evaluate them on behalf of all discounts.
+  return $strategy;
 }

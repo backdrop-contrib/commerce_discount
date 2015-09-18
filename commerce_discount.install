@@ -258,13 +258,26 @@ function commerce_discount_install_helper() {
 
   // Create fields for the shipping related offer types.
   if (module_exists('commerce_shipping')) {
-    // Creating the shipping service text field for the "Free shipping" offer.
+    // Creating the shipping service text field and checkbox for the "Free
+    // shipping" offer.
     if (empty($fields['commerce_free_shipping'])) {
       $field = array(
         'entity_types' => array('commerce_discount_offer'),
         'field_name' => 'commerce_free_shipping',
         'type' => 'text',
         'locked' => TRUE,
+      );
+      field_create_field($field);
+    }
+    if (empty($fields['commerce_free_shipping_strategy'])) {
+      $field = array(
+        'type' => 'list_text',
+        'field_name' => 'commerce_free_shipping_strategy',
+        'locked' => TRUE,
+        'settings' => array(
+          'allowed_values' => array(),
+          'allowed_values_function' => 'commerce_discount_free_shipping_strategies',
+        ),
       );
       field_create_field($field);
     }
@@ -455,6 +468,23 @@ function commerce_discount_install_helper() {
         'required' => TRUE,
         'widget' => array(
           'type' => 'options_select',
+        ),
+      );
+      field_create_instance($instance);
+    }
+    if (empty($instances['commerce_discount_offer']['free_shipping']['commerce_free_shipping_strategy'])) {
+      $instance = array(
+        'field_name' => 'commerce_free_shipping_strategy',
+        'entity_type' => 'commerce_discount_offer',
+        'bundle' => 'free_shipping',
+        'label' => t('Free shipping discount strategy'),
+        'required' => TRUE,
+        'widget' => array(
+          'type' => 'options_buttons',
+          'module' => 'options',
+        ),
+        'default_value' => array(
+          0 => array('value' => 'only_selected'),
         ),
       );
       field_create_instance($instance);
@@ -821,4 +851,50 @@ function commerce_discount_update_7107() {
   }
 
   return t('Fields added to support the new "Shipping service upgrade" offer type.');
+}
+
+/**
+ * Add a field to support the concept of "Free or reduced shipping" offers.
+ */
+function commerce_discount_update_7108() {
+  if (module_exists('commerce_shipping')) {
+    $fields = field_read_fields(array(), array('include_inactive' => TRUE));
+
+    if (empty($fields['commerce_free_shipping_strategy'])) {
+      $field = array(
+        'type' => 'list_text',
+        'field_name' => 'commerce_free_shipping_strategy',
+        'locked' => TRUE,
+        'settings' => array(
+          'allowed_values' => array(),
+          'allowed_values_function' => 'commerce_discount_free_shipping_strategies',
+        ),
+      );
+      field_create_field($field);
+    }
+
+    field_sync_field_status();
+    field_info_cache_clear();
+    $instances = field_info_instances();
+
+    if (empty($instances['commerce_discount_offer']['free_shipping']['commerce_free_shipping_strategy'])) {
+      $instance = array(
+        'field_name' => 'commerce_free_shipping_strategy',
+        'entity_type' => 'commerce_discount_offer',
+        'bundle' => 'free_shipping',
+        'label' => t('Free shipping discount strategy'),
+        'required' => TRUE,
+        'widget' => array(
+          'type' => 'options_buttons',
+          'module' => 'options',
+        ),
+        'default_value' => array(
+          0 => array('value' => 'only_selected'),
+        ),
+      );
+      field_create_instance($instance);
+    }
+  }
+
+  return t('Field added to support the concept of "Free or reduced shipping" offers.');
 }
