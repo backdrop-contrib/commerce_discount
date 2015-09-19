@@ -55,6 +55,14 @@ function commerce_discount_rules_condition_info() {
           'default value' => '',
           'description' => t('The value to compare against the passed order amount.'),
         ),
+        'line_item_types' => array(
+          'type' => 'list<text>',
+          'label' => t('Line item types'),
+          'description' => t('Select the line item types that should be included in the order total amount. Discount created line items are always excluded.'),
+          'default value' => commerce_order_compare_order_amount_options_default(),
+          'options list' => 'commerce_order_compare_order_amount_options_list',
+          'optional' => TRUE,
+        ),
       ),
       'module' => 'commerce_discount',
       'group' => t('Commerce Order'),
@@ -441,6 +449,21 @@ function commerce_discount_compatibility_check(EntityDrupalWrapper $order_wrappe
 }
 
 /**
+ * Returns an options list for commerce_order_compare_order_amount line item types.
+ */
+function commerce_order_compare_order_amount_options_list() {
+  return array_diff_key(commerce_line_item_type_options_list(), drupal_map_assoc(array('commerce_discount', 'product_discount')));
+}
+
+/**
+ * Returns a default value array for commerce_order_compare_order_amount line
+ * item types.
+ */
+function commerce_order_compare_order_amount_options_default() {
+  return drupal_map_assoc(array_keys(commerce_order_compare_order_amount_options_list()));
+}
+
+/**
  * Build callback for commerce_order_compare_order_amount.
  *
  * @param EntityDrupalWrapper $wrapper
@@ -453,7 +476,7 @@ function commerce_discount_compatibility_check(EntityDrupalWrapper $order_wrappe
  * @return bool
  *   return true if condition is valid. false otherwise.
  */
-function commerce_order_compare_order_amount_build(EntityDrupalWrapper $wrapper, $operator, $total) {
+function commerce_order_compare_order_amount_build(EntityDrupalWrapper $wrapper, $operator, $total, $line_item_types) {
   $total_order = 0;
 
   // Ensure the discount currency code is the same than the order.
@@ -461,9 +484,15 @@ function commerce_order_compare_order_amount_build(EntityDrupalWrapper $wrapper,
     return FALSE;
   }
 
+  // If $line_item_types is not an array, then we need to total all line item
+  // types to preserve backwards compatibility.
+  if (!is_array($line_item_types)) {
+    $line_item_types = commerce_order_compare_order_amount_options_default();
+  }
+
   // Get given total order amount.
   foreach ($wrapper->commerce_line_items as $line_item_wrapper) {
-    if ($line_item_wrapper->getBundle() != 'commerce_discount') {
+    if (in_array($line_item_wrapper->getBundle(), $line_item_types)) {
       // Convert the line item's total to the order's currency for totalling.
       $component_total = commerce_price_component_total($line_item_wrapper->commerce_total->value());
 

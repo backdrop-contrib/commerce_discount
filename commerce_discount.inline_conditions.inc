@@ -176,14 +176,26 @@ function commerce_discount_inline_conditions_build_alter(&$value) {
 function commerce_order_compare_order_amount_configure($settings) {
   $form = array();
 
-  // Ensure we've default settings set.
+  module_load_include('inc', 'commerce_discount', 'commerce_discount.rules');
+
+  // Ensure we have default values for the condition settings.
   $settings += array(
     'operator' => '>=',
     'total' => array('amount' => 0),
+    'line_item_types' => commerce_order_compare_order_amount_options_default(),
   );
 
   // Get the default website currency.
   $default_currency = commerce_currency_load(NULL);
+
+  $form['line_item_types'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Included line item types'),
+    '#title_display' => 'invisible',
+    '#options' => commerce_order_compare_order_amount_options_list(),
+    '#default_value' => $settings['line_item_types'],
+    '#multiple' => TRUE,
+  );
 
   $form['operator'] = array(
     '#type' => 'select',
@@ -201,7 +213,7 @@ function commerce_order_compare_order_amount_configure($settings) {
     '#type' => 'container',
     '#tree' => TRUE,
     '#element_validate' => array('commerce_price_field_widget_validate'),
-    '#suffix' => '<div class="condition-instructions">' . t('The discount is active only if the order total matches the above condition.<br />(the other order discounts are not taken into the comparison process)') . '</div>',
+    '#suffix' => '<div class="condition-instructions">' . t('The discount is active only if the total of the selected line items on the order passes the comparison condition.<br />(Other order / product discount line items are not taken into account in the comparison process.)') . '</div>',
   );
 
   $form['total']['amount'] = array(
