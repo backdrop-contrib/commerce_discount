@@ -509,11 +509,17 @@ function commerce_order_compare_order_amount_build(EntityDrupalWrapper $wrapper,
     case '<':
       return $total_order < $total['amount'];
 
+    case '<=':
+      return $total_order <= $total['amount'];
+
     case '==':
       return $total_order == $total['amount'];
 
     case '>':
       return $total_order > $total['amount'];
+
+    case '>=':
+      return $total_order >= $total['amount'];
 
     default:
       return FALSE;
@@ -1408,8 +1414,10 @@ function commerce_discount_set_existing_line_item_price(EntityDrupalWrapper $ord
  */
 function _commerce_discount_operator_options() {
   return array(
-    '<' => t('lower than'),
+    '<' => t('less than'),
+    '<=' => t('less than or equal to'),
     '==' => t('equals'),
     '>' => t('greater than'),
+    '>=' => t('greater than or equal to'),
   );
 }

@@ -201,11 +201,7 @@ function commerce_order_compare_order_amount_configure($settings) {
     '#type' => 'select',
     '#title' => t('Operator'),
     '#title_display' => 'invisible',
-    '#options' => array(
-      '<' => t('lower than'),
-      '==' => t('equals'),
-      '>' => t('greater than'),
-    ),
+    '#options' => _commerce_discount_operator_options(),
     '#default_value' => $settings['operator'],
   );
 
