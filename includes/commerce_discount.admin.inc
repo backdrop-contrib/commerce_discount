@@ -156,8 +156,8 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
   $form['component_title'] = array(
     '#title' => t('Name'),
     '#type' => 'textfield',
-    '#default_value' => $commerce_discount->component_title,
-    '#description' => t('Shown to customers.'),
+    '#default_value' => empty($commerce_discount->component_title) ? t('Discount') : $commerce_discount->component_title,
+    '#description' => t('Shown to customers. Defaults to "Discount".'),
   );
 
   // Machine-readable type name.

@@ -1294,7 +1294,7 @@ function commerce_discount_add_price_component(EntityDrupalWrapper $line_item_wr
     'currency_code' => $discount_amount['currency_code'],
     'data' => array(
       'discount_name' => $discount_name,
-      'discount_component_title' => empty($component_title) ? 'discount' : $component_title,
+      'discount_component_title' => empty($component_title) ? t('Discount') : $component_title,
     ),
   );
 
