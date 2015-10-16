@@ -152,9 +152,6 @@
   border-bottom: 0;
   padding-left: 0;
 }
-.field-name-commerce-discount-offer .commerce-offer-fields-wrapper {
-  float: left;
-}
 
 /**
  * Discount dates block.
@@ -336,6 +333,10 @@
 }
 .view-commerce-discount-overview .views-table td .views-field-operations-dropbutton .ctools-dropbutton .ctools-content {
   border-right: 1px solid #ccc;
+}
+
+.field-name-commerce-compatibility-strategy .field-widget-options-buttons .form-wrapper {
+  clear: both;
 }
 
 /*# sourceMappingURL=commerce_discount.css.map */
