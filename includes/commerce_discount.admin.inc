@@ -273,7 +273,11 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
       '#weight' => 45,
       '#limit_validation_errors' => array(),
       '#submit' => array('commerce_discount_form_submit_delete'),
+      '#suffix' => l(t('Cancel'), 'admin/commerce/discounts')
     );
+  }
+  else{
+    $form['actions']['submit']['#suffix'] = l(t('Cancel'), 'admin/commerce/discounts');
   }
 
   // Add assets.
