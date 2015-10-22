@@ -90,7 +90,7 @@ class CommerceDiscountTestBase extends CommerceBaseTestCase {
    * @param int|array $amount
    *   The discount offer amount, percentage or product ids array.
    * @param string $name
-   *   Discount name - Optional.
+   *   Discount name - Optional. If given, CANNOT start with a number.
    * @param string $component_title
    *   Component title - Optional.
    *
@@ -621,6 +621,37 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
     $this->assertTrue($order_wrapper->commerce_line_items->count() == 3, 'An order with one product and two fixed order discounts has three line items.');
     $order_wrapper->save();
     $this->assertTrue($order_wrapper->commerce_line_items->count() == 3, 'After updating the order it still has three line items.');
+  }
+
+  /**
+   * Test rounding in percentage based product discounts.
+   *
+   * To test the rounding used when adding discount price components to product
+   * line items, we use a 30% discount on a product that costs $10.25. When
+   * rounding was not working correctly, the unit price amount would be set to
+   * $7.18 even though the sum of the unit price's price components would in
+   * fact be $7.17. In reality, since the actual discount amount SHOULD be
+   * rounded up to $3.08 from $3.075, the unit price amount SHOULD be $7.17.
+   * This test ensures that is the case in conjunction with a patch from the
+   * linked issue below.
+   *
+   * @link https://www.drupal.org/node/2468943#comment-10476486
+   */
+  public function testCommerceProductPercentageDiscountRounding() {
+    // Create the 30% discount and $10.25 product.
+    $this->createDiscount('product_discount', 'percentage', 30, 'discount_30_off');
+    $product = $this->createDummyProduct('TEST-PRODUCT', 'Test Product', 1025);
+
+    // Create the order and apply discount.
+    $order = $this->createDummyOrder($this->store_customer->uid, array($product->product_id => 1), 'completed');
+    $order_wrapper = commerce_cart_order_refresh($order);
+
+    // Verify rounding came out properly.
+    $line_item_wrapper = $order_wrapper->commerce_line_items->get(0);
+    $unit_price = $line_item_wrapper->commerce_unit_price->value();
+
+    $this->assertEqual($unit_price['amount'], 717, 'Product line item unit price amount rounded properly for a 30% discount.');
+    $this->assertEqual($unit_price['data']['components'][1]['price']['amount'], -308, 'Product line item unit price discount component properly rounded for a 30% discount.');
   }
 
   /**
