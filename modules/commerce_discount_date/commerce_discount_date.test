@@ -55,7 +55,7 @@ class CommerceDiscountDateTest extends CommerceDiscountTestBase {
     $this->drupalLogin($this->store_admin);
 
     // Access to the admin discount creation page.
-    $this->drupalGet('admin/commerce/store/discounts/add');
+    $this->drupalGet('admin/commerce/discounts/add');
 
     // Check the integrity of the add form.
     $this->assertFieldByName('commerce_discount_fields[commerce_discount_date][und][0][value][date]', NULL, 'Start date field is present');
@@ -105,7 +105,7 @@ class CommerceDiscountDateTest extends CommerceDiscountTestBase {
     $this->drupalLogin($this->store_admin);
 
     // Access to the admin discount edit page.
-    $this->drupalGet('admin/commerce/store/discounts/manage/' . $discount->name);
+    $this->drupalGet('admin/commerce/discounts/manage/' . $discount->name);
 
     // Check the integrity of the add form.
     $this->assertFieldByName('commerce_discount_fields[commerce_discount_date][und][0][value][date]', NULL, 'Start date field is present');

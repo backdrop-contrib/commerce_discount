@@ -189,7 +189,7 @@ function commerce_discount_entity_info() {
     'views controller class' => 'CommerceDiscountViewsController',
     // Enable the entity API's admin UI.
     'admin ui' => array(
-      'path' => 'admin/commerce/store/discounts',
+      'path' => 'admin/commerce/discounts',
       'file' => 'includes/commerce_discount.admin.inc',
       'controller class' => 'CommerceDiscountUIController',
     ),

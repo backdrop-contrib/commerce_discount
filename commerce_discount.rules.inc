@@ -245,9 +245,9 @@ function commerce_discount_rules_action_info() {
   $types = commerce_discount_offer_types();
   $items = array();
 
-  foreach (array('fixed_amount', 'percentage', 'free_products') as $type) {
-    $items[$types[$type]['action']] = array(
-      'label' => $types[$type]['label'],
+  foreach ($types as $info) {
+    $items[$info['action']] = array(
+      'label' => $info['label'],
       'parameter' => array(
         'entity' => array(
           'label' => t('Entity'),
@@ -261,7 +261,7 @@ function commerce_discount_rules_action_info() {
         ),
       ),
       'group' => t('Commerce Discount'),
-      'base' => $types[$type]['action'],
+      'base' => $info['action'],
     );
   }
 
@@ -1296,7 +1296,7 @@ function commerce_discount_add_price_component(EntityDrupalWrapper $line_item_wr
     'currency_code' => $discount_amount['currency_code'],
     'data' => array(
       'discount_name' => $discount_name,
-      'discount_component_title' => empty($component_title) ? 'discount' : $component_title,
+      'discount_component_title' => empty($component_title) ? t('Discount') : $component_title,
     ),
   );
 

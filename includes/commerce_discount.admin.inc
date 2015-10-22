@@ -80,23 +80,25 @@ class CommerceDiscountUIController extends EntityDefaultUIController {
       'file path' => drupal_get_path('module', 'commerce_discount'),
     );
 
-    $items[$this->path . '/rules'] = array(
-      'title' => 'Discount rules',
-      'description' => 'Manage discount rules',
-      'page callback' => 'drupal_goto',
-      'page arguments' => array(
-        'admin/config/workflow/rules',
-        array(
-          'query' => array(
-            'event' => 0,
-            'tag' => 'Commerce Discount',
+    if (module_exists('rules_admin')) {
+      $items[$this->path . '/rules'] = array(
+        'title' => 'Discount rules',
+        'description' => 'Manage discount rules',
+        'page callback' => 'drupal_goto',
+        'page arguments' => array(
+          'admin/config/workflow/rules',
+          array(
+            'query' => array(
+              'event' => 0,
+              'tag' => 'Commerce Discount',
+            ),
           ),
         ),
-      ),
-      'access arguments' => array('administer commerce discounts'),
-      'type' => MENU_LOCAL_TASK,
-      'weight' => 10,
-    );
+        'access arguments' => array('administer commerce discounts'),
+        'type' => MENU_LOCAL_TASK,
+        'weight' => 10,
+      );
+    }
 
     return $items;
   }
@@ -156,8 +158,8 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
   $form['component_title'] = array(
     '#title' => t('Name'),
     '#type' => 'textfield',
-    '#default_value' => $commerce_discount->component_title,
-    '#description' => t('Shown to customers.'),
+    '#default_value' => empty($commerce_discount->component_title) ? t('Discount') : $commerce_discount->component_title,
+    '#description' => t('Shown to customers. Defaults to "Discount".'),
   );
 
   // Machine-readable type name.
@@ -313,14 +315,14 @@ function commerce_discount_form_validate($form, &$form_state) {
 function commerce_discount_form_submit(&$form, &$form_state) {
   $commerce_discount = entity_ui_form_submit_build_entity($form, $form_state);
   $commerce_discount->save();
-  $form_state['redirect'] = 'admin/commerce/store/discounts';
+  $form_state['redirect'] = 'admin/commerce/discounts';
 }
 
 /**
  * Form API submit callback for the delete button.
  */
 function commerce_discount_form_submit_delete(&$form, &$form_state) {
-  $form_state['redirect'] = 'admin/commerce/store/discounts/manage/' . $form_state['commerce_discount']->name . '/delete';
+  $form_state['redirect'] = 'admin/commerce/discounts/manage/' . $form_state['commerce_discount']->name . '/delete';
 }
 
 /**

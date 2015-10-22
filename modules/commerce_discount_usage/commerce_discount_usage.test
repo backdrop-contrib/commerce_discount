@@ -44,7 +44,7 @@ class CommerceDiscountUsageTest extends CommerceDiscountTestBase {
     $this->drupalLogin($this->store_admin);
 
     // Access to the admin discount creation page.
-    $this->drupalGet('admin/commerce/store/discounts/add');
+    $this->drupalGet('admin/commerce/discounts/add');
 
     // Check the integrity of the add form.
     $this->assertFieldByName('commerce_discount_fields[discount_usage_per_person][und][0][value]', NULL, 'Maximum usage per customer field is present');
@@ -85,7 +85,7 @@ class CommerceDiscountUsageTest extends CommerceDiscountTestBase {
     $this->drupalLogin($this->store_admin);
 
     // Access to the admin discount edit page.
-    $this->drupalGet('admin/commerce/store/discounts/manage/' . $discount->name);
+    $this->drupalGet('admin/commerce/discounts/manage/' . $discount->name);
 
     // Check the integrity of the add form.
     $this->assertFieldByName('commerce_discount_fields[discount_usage_per_person][und][0][value]', NULL, 'Maximum usage per customer field is present');
