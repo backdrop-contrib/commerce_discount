@@ -145,6 +145,9 @@
   border-bottom: 0;
   padding-left: 0;
 }
+.field-name-commerce-discount-offer .commerce-offer-fields-wrapper {
+  float: left;
+}
 .field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-item {
   margin-bottom: 2px;
 }
