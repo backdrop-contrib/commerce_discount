@@ -324,12 +324,8 @@
 .view-commerce-discount-overview .views-table td .views-field-operations-dropbutton .ctools-dropbutton {
   border: 1px solid #ccc;
   border-radius: 10px;
-  background-image: linear-gradient(top, #fcfdfc 36%, #f0f0f0 68%);
-  background-image: -o-linear-gradient(top, #fcfdfc 36%, #f0f0f0 68%);
-  background-image: -moz-linear-gradient(top, #fcfdfc 36%, #f0f0f0 68%);
   background-image: -webkit-linear-gradient(top, #fcfdfc 36%, #f0f0f0 68%);
-  background-image: -ms-linear-gradient(top, #fcfdfc 36%, #f0f0f0 68%);
-  background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0.36, #fcfdfc), color-stop(0.68, #f0f0f0));
+  background-image: linear-gradient(top, #fcfdfc 36%, #f0f0f0 68%);
 }
 .view-commerce-discount-overview .views-table td .views-field-operations-dropbutton .ctools-dropbutton .ctools-content {
   border-right: 1px solid #ccc;

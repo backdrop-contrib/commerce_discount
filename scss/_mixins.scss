@@ -9,12 +9,9 @@ $green: #7cae20;
 $azure: #d2eeff;
 
 @mixin gradient {
-  background-image: linear-gradient(top, rgb(252,253,252) 36%, rgb(240,240,240) 68%);
-  background-image: -o-linear-gradient(top, rgb(252,253,252) 36%, rgb(240,240,240) 68%);
-  background-image: -moz-linear-gradient(top, rgb(252,253,252) 36%, rgb(240,240,240) 68%);
-  background-image: -webkit-linear-gradient(top, rgb(252,253,252) 36%, rgb(240,240,240) 68%);
-  background-image: -ms-linear-gradient(top, rgb(252,253,252) 36%, rgb(240,240,240) 68%);
-  background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0.36, rgb(252,253,252)), color-stop(0.68, rgb(240,240,240)));
+  // http://caniuse.com/#search=linear-gradient
+  background-image: -webkit-linear-gradient(top, rgb(252, 253, 252) 36%, rgb(240, 240, 240) 68%);
+  background-image: linear-gradient(top, rgb(252, 253, 252) 36%, rgb(240, 240, 240) 68%);
 }
 
 @mixin box {
