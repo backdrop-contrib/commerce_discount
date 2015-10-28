@@ -113,10 +113,7 @@ function commerce_discount_overview_form() {
   $view->override_url = $_GET['q'];
   $form['view'] = array('#markup' => $view->preview());
   $form['#attached']['css'][] = drupal_get_path('module', 'commerce_discount') . '/css/commerce_discount.css';
-  // Load rtl.css file if needed.
-  if ($GLOBALS['language']->direction == 1) {
-    $form['#attached']['css'][] = drupal_get_path('module', 'commerce_discount') . '/css/commerce_discount-rtl.css';
-  }
+
   return $form;
 }
 
@@ -283,10 +280,6 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
   // Add assets.
   $form['#attached']['js'][] = drupal_get_path('module', 'commerce_discount') . '/js/commerce_discount.js';
   $form['#attached']['css'][] = drupal_get_path('module', 'commerce_discount') . '/css/commerce_discount.css';
-  // Load rtl.css file if needed.
-  if ($GLOBALS['language']->direction == 1) {
-    $form['#attached']['css'][] = drupal_get_path('module', 'commerce_discount') . '/css/commerce_discount-rtl.css';
-  }
   $form['#attributes']['class'][] = 'commerce-discount-form';
 
   return $form;
