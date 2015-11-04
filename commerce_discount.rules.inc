@@ -1123,7 +1123,7 @@ function commerce_discount_shipping_upgrade($order, $discount_name) {
 }
 
 /**
- * Rules action: Apply free products discount.
+ * Rules action: Apply free bonus products discount.
  *
  * @param EntityDrupalWrapper $wrapper
  *   Wrapped commerce_order entity type.
@@ -1211,7 +1211,7 @@ function commerce_discount_free_products(EntityDrupalWrapper $wrapper, $discount
 
     commerce_line_item_save($line_item);
 
-    // Add the free product to order's line items.
+    // Add the free bonus product to order's line items.
     $wrapper->commerce_line_items[] = $line_item;
   }
 

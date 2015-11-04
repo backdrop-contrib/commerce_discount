@@ -432,7 +432,7 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
    * Test order wrapper cache from order refresh.
    */
   public function testCommerceDiscountOrderRefreshWrapper() {
-    // Create a 'free products' product discount.
+    // Create a 'free bonus products' product discount.
     $discount = $this->createDiscount('order_discount', 'free_products', array($this->product->product_id));
     // Create a completed order.
     $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'completed');
@@ -510,10 +510,10 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
   }
 
   /**
-   * Test Free products order discounts.
+   * Test free bonus products order discounts.
    */
   public function testCommerceDiscountFreeProductsOrderDiscount() {
-    // Create a 'free products' product discount.
+    // Create 'free bonus products' product discount.
     $discount = $this->createDiscount('order_discount', 'free_products', array($this->product->product_id));
     // Create a completed order.
     $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'completed');
@@ -521,8 +521,8 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
     $order_wrapper = commerce_cart_order_refresh($order);
 
     // Check if the discount was applied on the order total price.
-    $this->assertEqual($order_wrapper->commerce_order_total->amount->value(), 1000, 'Free Products order discount has the price of only one product.');
-    $this->assertEqual($order_wrapper->commerce_line_items->count(), 2, 'Free Products order discount is added as a line item.');
+    $this->assertEqual($order_wrapper->commerce_order_total->amount->value(), 1000, 'Free Bonus Products order discount has the price of only one product.');
+    $this->assertEqual($order_wrapper->commerce_line_items->count(), 2, 'Free Bonus Products order discount is added as a line item.');
 
     // Disable the discount.
     $discount->status = FALSE;
@@ -531,8 +531,8 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
     // Re-save the order.
     // Check if the discount was applied on the order total price.
     $order_wrapper = commerce_cart_order_refresh($order);
-    $this->assertEqual($order_wrapper->commerce_order_total->amount->value(), 1000, "Free Products order discount is removed when it's not applicable and price is the same.");
-    $this->assertEqual($order_wrapper->commerce_line_items->count(), 1, "Free Products order discount is removed when it's not applicable and line item count is only 1");
+    $this->assertEqual($order_wrapper->commerce_order_total->amount->value(), 1000, "Free Bonus Products order discount is removed when it's not applicable and price is the same.");
+    $this->assertEqual($order_wrapper->commerce_line_items->count(), 1, "Free Bonus Products order discount is removed when it's not applicable and line item count is only 1");
   }
 
   /**

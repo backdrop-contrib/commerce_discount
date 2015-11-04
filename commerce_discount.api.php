@@ -86,11 +86,11 @@ function hook_commerce_discount_rule_build($rule, $commerce_discount) {
 }
 
 /**
- * Alter the context that is going to be passed into a free product line item.
+ * Alter the context that is going to be passed into a free bonus product line item.
  * Use this to modify the display path.
  *
  * @param array $context
- *   The context that is about to be passed into a new free product line item.
+ *   The context that is about to be passed into a new free bonus product line item.
  * @param object $product
  *   The product that is being offered as free.
  * @param CommerceDiscount $discount

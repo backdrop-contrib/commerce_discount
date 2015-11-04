@@ -450,7 +450,7 @@ function commerce_discount_commerce_discount_offer_type_info() {
   }
 
   $types['free_products'] = array(
-    'label' => t('Free products'),
+    'label' => t('Add free bonus products'),
     'action' => 'commerce_discount_free_products',
     'entity types' => array('commerce_order'),
   );

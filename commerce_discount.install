@@ -333,7 +333,7 @@ function commerce_discount_install_helper() {
     }
   }
 
-  // Creating field for free products offer type.
+  // Creating field for free bonus products offer type.
   if (empty($fields['commerce_free_products']) && isset($field_types['commerce_product_reference'])) {
     $field = array(
       'entity_types' => array('commerce_discount_offer'),
@@ -553,7 +553,7 @@ function commerce_discount_install_helper() {
       'field_name' => 'commerce_free_products',
       'entity_type' => 'commerce_discount_offer',
       'bundle' => 'free_products',
-      'label' => t('Select free products'),
+      'label' => t('Select bonus products'),
       'description' => t('Enter a comma-separated list of SKUs. Each product is added to customer order with a quantity of 1.'),
       'required' => TRUE,
       'widget' => array(
