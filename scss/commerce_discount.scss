@@ -113,6 +113,8 @@
  * Choose offer type block.
  */
 .field-name-commerce-discount-offer {
+  // Help with floaties inside.
+  @include clearfix;
   border: none;
   margin: 0;
   padding: 0;
@@ -167,12 +169,17 @@
     }
   }
 
-  .f {
-    [dir="ltr"] & {
-      float: left;
-    }
-    [dir="rtl"] & {
-      float: right;
+  // The two columns for the offer type.
+  .ief-form > .fieldset-wrapper {
+    @include clearfix;
+    & > .form-type-radios,
+    & > .commerce-offer-fields-wrapper {
+      [dir="ltr"] & {
+        float: left;
+      }
+      [dir="rtl"] & {
+        float: right;
+      }
     }
   }
 

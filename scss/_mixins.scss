@@ -18,6 +18,15 @@ $azure: #d2eeff;
   padding: 0;
 }
 
+// https://css-tricks.com/snippets/css/clear-fix/
+@mixin clearfix {
+  &:after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+}
+
 @mixin btn {
   color: black;
   border-radius: 5px;

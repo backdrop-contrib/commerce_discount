@@ -132,6 +132,11 @@
   margin: 0;
   padding: 0;
 }
+.field-name-commerce-discount-offer:after {
+  content: "";
+  display: table;
+  clear: both;
+}
 .field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type label {
   border-bottom: 1px solid #ccc;
 }
@@ -196,10 +201,15 @@
 [dir="rtl"] .field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type .form-radios label {
   padding-right: 0;
 }
-[dir="ltr"] .field-name-commerce-discount-offer .f {
+.field-name-commerce-discount-offer .ief-form > .fieldset-wrapper:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+[dir="ltr"] .field-name-commerce-discount-offer .ief-form > .fieldset-wrapper > .form-type-radios, [dir="ltr"] .field-name-commerce-discount-offer .ief-form > .fieldset-wrapper > .commerce-offer-fields-wrapper {
   float: left;
 }
-[dir="rtl"] .field-name-commerce-discount-offer .f {
+[dir="rtl"] .field-name-commerce-discount-offer .ief-form > .fieldset-wrapper > .form-type-radios, [dir="rtl"] .field-name-commerce-discount-offer .ief-form > .fieldset-wrapper > .commerce-offer-fields-wrapper {
   float: right;
 }
 .field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-item {
@@ -381,8 +391,7 @@
 .view-commerce-discount-overview .views-table {
   border: none;
 }
-.view-commerce-discount-overview .views-table tr,
-.view-commerce-discount-overview .views-table td {
+.view-commerce-discount-overview .views-table tr, .view-commerce-discount-overview .views-table td {
   border: none;
 }
 .view-commerce-discount-overview .views-table th {
