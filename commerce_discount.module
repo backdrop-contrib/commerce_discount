@@ -50,7 +50,8 @@ function commerce_discount_commerce_cart_order_refresh($wrapper) {
 
       // Only check non-new line items; new ones have already been saved.
       if (isset($cloned_line_items[$id])) {
-        if ($wrapper_line_item->getBundle() == 'commerce_discount' && $wrapper_line_item->commerce_unit_price->amount->value() == 0) {
+        $unit_price = $wrapper_line_item->commerce_unit_price->value();
+        if ($wrapper_line_item->getBundle() == 'commerce_discount' && empty($unit_price['amount'])) {
           $line_items_to_delete[] = $id;
           $wrapper->commerce_line_items->offsetUnset($delta);
         }
@@ -59,11 +60,12 @@ function commerce_discount_commerce_cart_order_refresh($wrapper) {
           // commerce_cart_order_refresh() does) and quantity.
           // (Don't check e.g. commerce_total; it may not be updated yet.)
           $old_line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $cloned_line_items[$id]);
-          $old_data = $old_line_item_wrapper->commerce_unit_price->data->value() + array('components' => array());
-          $data = (array) $wrapper_line_item->commerce_unit_price->data->value() + array('components' => array());
+          $old_unit_price = $old_line_item_wrapper->commerce_unit_price->value();
+          $old_data = (array) $old_unit_price['data'] + array('components' => array());
+          $data = (array) $unit_price['data'] + array('components' => array());
 
-          if ($wrapper_line_item->commerce_unit_price->amount->value() != $old_line_item_wrapper->commerce_unit_price->amount->value() ||
-            $wrapper_line_item->commerce_unit_price->currency_code->value() != $old_line_item_wrapper->commerce_unit_price->currency_code->value() ||
+          if ($unit_price['amount'] != $old_unit_price['amount'] ||
+            $unit_price['currency_code'] != $old_unit_price['currency_code'] ||
             $data['components'] != $old_data['components']) {
             // Save changed line item (which will correctly set commerce_total).
             $wrapper_line_item->save();
@@ -87,7 +89,13 @@ function commerce_discount_commerce_cart_order_refresh($wrapper) {
  *   Wrapped commerce price.
  */
 function commerce_discount_remove_discount_components($price_wrapper) {
-  $data = (array) $price_wrapper->data->value() + array('components' => array());
+  $price = $price_wrapper->value();
+  // If there are no price or components, there is nothing to remove.
+  if (!$price || empty($price['data']['components'])) {
+    return;
+  }
+
+  $data = (array) $price['data'] + array('components' => array());
   $component_removed = FALSE;
   // Remove price components belonging to order discounts.
   foreach ($data['components'] as $key => $component) {
@@ -124,7 +132,7 @@ function commerce_discount_remove_discount_components($price_wrapper) {
 
   // Re-set the total price.
   $total = commerce_price_component_total($price_wrapper->value());
-  $price_wrapper->amount->set($total['amount']);
+  $price_wrapper->amount = $total['amount'];
 }
 
 /**

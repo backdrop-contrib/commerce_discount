@@ -749,4 +749,31 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
     $properly_applied = $this->discountAppliedToOrder('of1', $order) && $this->discountAppliedToOrder('of2', $order);
     $this->assertTrue($properly_applied, t('Both discounts applied when discount one is only compatible with discount two and discount two is compatible with any discount.'));
   }
+
+  /**
+   * Test that delete discounts do not cause fatal errors on cart refresh
+   *
+   * @link https://www.drupal.org/node/2538812
+   */
+  public function testCartWithDiscountsDeleted() {
+    // Testing fixed discount.
+    // Create a fixed order discount of $3.
+    /** @var CommerceDiscount $discount */
+    $discount = $this->createDiscount('order_discount', 'fixed_amount', 300);
+
+    // Create an order.
+    $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'completed');
+    // Recalculate discounts.
+    $order_wrapper = commerce_cart_order_refresh($order);
+
+    // Check if the discount was applied on the order total price.
+    $this->assertTrue($order_wrapper->commerce_order_total->amount->value() == 700, 'Fixed order discount is deducted correctly.');
+
+    // Delete the discount.
+    $discount->delete();
+
+    // Recalculate discounts.
+    $order_wrapper = commerce_cart_order_refresh($order);
+    $this->assertTrue($order_wrapper->commerce_order_total->amount->value() == 1000, "Fixed order discount is removed when it's not applicable.");
+  }
 }
