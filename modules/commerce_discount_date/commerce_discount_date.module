@@ -50,6 +50,23 @@ function commerce_discount_date_views_api($module, $api) {
  */
 function commerce_discount_date_form_commerce_discount_form_alter(&$form, $form_state) {
   $form['commerce_discount_fields']['commerce_discount_date']['#after_build'][] = 'commerce_discount_date_after_build';
+  $form['commerce_discount_fields']['additional_settings']['discount_date'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Discount dates'),
+    '#collapsible' => TRUE,
+    '#weight' => -1,
+  );
+  $form['commerce_discount_fields']['#pre_render'][] = 'commerce_discount_date_pre_render';
+}
+
+/**
+ * Add fields to the additional_settings vertical tabs container.
+ */
+function commerce_discount_date_pre_render($fields) {
+  $fields['additional_settings']['discount_date']['commerce_discount_date'] = $fields['commerce_discount_date'];
+  unset($fields['commerce_discount_date']);
+
+  return $fields;
 }
 
 /**

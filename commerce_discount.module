@@ -313,7 +313,7 @@ function commerce_discount_commerce_price_formatted_components_alter(&$component
 function commerce_discount_form_commerce_discount_form_alter(&$form, $form_state) {
   // Add clearfix to the discount type container.
   $form['commerce_discount_type']['#attributes']['class'][] = 'clearfix';
-  $form['commerce_discount_fields']['commerce_discount_offer'][LANGUAGE_NONE]['form']['type']['#attributes']['class'][] = 'clearfix';
+  $form['commerce_discount_fields']['commerce_discount_offer']['#attributes']['class'][] = 'clearfix';
 
   if (empty($form_state['commerce_discount']->discount_id)) {
     // Entity is new.
@@ -330,6 +330,29 @@ function commerce_discount_form_commerce_discount_form_alter(&$form, $form_state
     drupal_set_message(t('The rule associated with this discount is overriden, making it impossible to edit the discount.'), 'warning');
     $form['actions']['submit']['#disabled'] = TRUE;
   }
+
+  // Vertical tabs container.
+  $form['commerce_discount_fields']['additional_settings'] = array(
+    '#type' => 'vertical_tabs',
+    '#weight' => 99,
+    'commerce_discount_compatibility' => array(
+      '#type' => 'fieldset',
+      '#title' => t('Compatibility with other discounts'),
+      '#collapsible' => TRUE,
+    )
+  );
+  $form['commerce_discount_fields']['#pre_render'][] = 'commerce_discount_vertical_tabs_pre_render';
+}
+
+/**
+ * Add fields to the additional_settings vertical tabs container.
+ */
+function commerce_discount_vertical_tabs_pre_render($fields) {
+  $fields['additional_settings']['commerce_discount_compatibility']['commerce_compatibility_strategy'] = $fields['commerce_compatibility_strategy'];
+  $fields['additional_settings']['commerce_discount_compatibility']['commerce_compatibility_selection'] = $fields['commerce_compatibility_selection'];
+  unset($fields['commerce_compatibility_strategy'], $fields['commerce_compatibility_selection']);
+
+  return $fields;
 }
 
 /**
