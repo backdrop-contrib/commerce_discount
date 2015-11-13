@@ -787,13 +787,9 @@ function commerce_discount_fixed_amount(EntityDrupalWrapper $wrapper, $discount_
  */
 function commerce_discount_percentage(EntityDrupalWrapper $wrapper, $discount_name) {
   $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount_name);
-  $rate = $discount_wrapper->commerce_discount_offer->commerce_percentage->value();
+  $rate = $discount_wrapper->commerce_discount_offer->commerce_percentage->value() / 100;
   // Get the line item types to apply the discount to.
   $line_item_types = variable_get('commerce_discount_line_item_types', array('product' => 'product'));
-
-  if ($rate > 1) {
-    $rate = $rate / 100;
-  }
 
   switch ($wrapper->type()) {
     case 'commerce_order':

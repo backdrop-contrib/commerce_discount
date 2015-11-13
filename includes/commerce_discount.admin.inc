@@ -304,6 +304,14 @@ function commerce_discount_form_validate($form, &$form_state) {
   if (!empty($form_state['values']['name'])) {
     form_set_value($form['name'], 'discount_' . $form_state['values']['name'], $form_state);
   }
+
+  // Check if this is a percentage offer.
+  if (isset($form_state['values']['commerce_discount_fields']['commerce_discount_offer'][LANGUAGE_NONE]['form']['commerce_percentage'])) {
+    $percentage = $form_state['values']['commerce_discount_fields']['commerce_discount_offer'][LANGUAGE_NONE]['form']['commerce_percentage'][LANGUAGE_NONE][0]['value'];
+    if (!empty($percentage) && $percentage <= 0) {
+      form_set_error('commerce_discount_fields][commerce_discount_offer][' . LANGUAGE_NONE . '][form][commerce_percentage', t('Percentage should be a positive, non-zero number.'));
+    }
+  }
 }
 
 /**

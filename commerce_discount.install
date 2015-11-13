@@ -898,3 +898,33 @@ function commerce_discount_update_7108() {
 
   return t('Field added to support the concept of "Free or reduced shipping" offers.');
 }
+
+/**
+ * Check for wrong discount values, before form validation was introduced.
+ *
+ * @see https://www.drupal.org/node/2468159#comment-10100064
+ */
+function commerce_discount_update_7109() {
+  // Every value below and including '1' should be recalculated.
+  $query = db_select('field_data_commerce_percentage', 'percent');
+  $query->condition('percent.commerce_percentage_value', 1, '<=')
+    ->fields('percent', array('commerce_percentage_value', 'entity_id'));
+  $result = $query->execute();
+
+  if ($result) {
+    foreach ($result as $record) {
+      // We got results, perform the updates.
+      db_update('field_data_commerce_percentage')
+        ->fields(array(
+          'commerce_percentage_value' => abs($record->commerce_percentage_value * 100)
+        ))
+        ->condition('entity_id', $record->entity_id, '=')
+        ->execute();
+    }
+  }
+
+  $text = t('Update 7109 finished. Please check all your percentage based discount settings for correct values after this update!');
+  $text .= t('Number of percentage values in table "field_data_commerce_percentage" who were updated as a result: ' . $result->rowCount());
+
+  return $text;
+}
