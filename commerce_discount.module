@@ -315,6 +315,18 @@ function commerce_discount_form_commerce_discount_form_alter(&$form, $form_state
   $form['commerce_discount_type']['#attributes']['class'][] = 'clearfix';
   $form['commerce_discount_fields']['commerce_discount_offer']['#attributes']['class'][] = 'clearfix';
 
+  // Vertical tabs container.
+  $form['commerce_discount_fields']['additional_settings'] = array(
+    '#type' => 'vertical_tabs',
+    '#weight' => 99,
+    'commerce_discount_compatibility' => array(
+      '#type' => 'fieldset',
+      '#title' => t('Compatibility with other discounts'),
+      '#collapsible' => TRUE,
+    ),
+  );
+  $form['commerce_discount_fields']['#pre_render'][] = 'commerce_discount_vertical_tabs_pre_render';
+
   if (empty($form_state['commerce_discount']->discount_id)) {
     // Entity is new.
     return;
@@ -330,18 +342,6 @@ function commerce_discount_form_commerce_discount_form_alter(&$form, $form_state
     drupal_set_message(t('The rule associated with this discount is overriden, making it impossible to edit the discount.'), 'warning');
     $form['actions']['submit']['#disabled'] = TRUE;
   }
-
-  // Vertical tabs container.
-  $form['commerce_discount_fields']['additional_settings'] = array(
-    '#type' => 'vertical_tabs',
-    '#weight' => 99,
-    'commerce_discount_compatibility' => array(
-      '#type' => 'fieldset',
-      '#title' => t('Compatibility with other discounts'),
-      '#collapsible' => TRUE,
-    )
-  );
-  $form['commerce_discount_fields']['#pre_render'][] = 'commerce_discount_vertical_tabs_pre_render';
 }
 
 /**
