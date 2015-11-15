@@ -24,7 +24,7 @@ class CommerceDiscountUsageTest extends CommerceDiscountTestBase {
     return array(
       'name' => 'Discounts usage',
       'description' => 'Test discounts usage UI and functionality',
-      'group' => 'Commerce discounts',
+      'group' => 'Commerce Discount',
     );
   }
 

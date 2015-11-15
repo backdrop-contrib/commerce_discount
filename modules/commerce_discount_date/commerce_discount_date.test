@@ -36,7 +36,7 @@ class CommerceDiscountDateTest extends CommerceDiscountTestBase {
     return array(
       'name' => 'Discounts date',
       'description' => 'Test discounts date UI and functionality',
-      'group' => 'Commerce discounts',
+      'group' => 'Commerce Discount',
     );
   }
 
