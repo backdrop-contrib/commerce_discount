@@ -7,20 +7,6 @@
   // Position the discount status block on top right region.
   position: relative;
 
-  .form-item-status {
-    background-color: #eee;
-    padding: 10px 10px 20px 10px;
-    position: absolute;
-    top: 0;
-    [dir="ltr"] & {
-      right: 0;
-    }
-    [dir="rtl"] & {
-      left: 0;
-    }
-    width: 180px;
-  }
-
   // Reset.
   .form-item-label {
     clear: both;

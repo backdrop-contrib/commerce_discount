@@ -4,19 +4,6 @@
 .commerce-discount-form {
   position: relative;
 }
-.commerce-discount-form .form-item-status {
-  background-color: #eee;
-  padding: 10px 10px 20px 10px;
-  position: absolute;
-  top: 0;
-  width: 180px;
-}
-[dir="ltr"] .commerce-discount-form .form-item-status {
-  right: 0;
-}
-[dir="rtl"] .commerce-discount-form .form-item-status {
-  left: 0;
-}
 .commerce-discount-form .form-item-label {
   clear: both;
 }

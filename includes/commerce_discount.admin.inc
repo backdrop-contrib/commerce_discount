@@ -177,25 +177,7 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
     '#field_suffix' => '</span>&lrm;',
   );
 
-  $form['status'] = array(
-    '#title' => t('Discount status'),
-    '#type' => 'select',
-    '#options' => array(
-      TRUE => t('Active'),
-      FALSE => t('Disabled'),
-    ),
-    '#required' => FALSE,
-    '#default_value' => $commerce_discount->status,
-  );
 
-  // Add the sort order select list.
-  $form['sort_order'] = array(
-    '#type' => 'select',
-    '#title' => t('Sort order'),
-    '#description' => t('Discounts will be sorted by this value to be evaluated in that order.'),
-    '#options' => drupal_map_assoc(range(1, 21)),
-    '#default_value' => !empty($commerce_discount->sort_order) ? $commerce_discount->sort_order : 10,
-  );
 
   // Show a list of commerce discounts.
   $form['commerce_discount_type'] = array(
@@ -215,6 +197,45 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
     '#suffix' => '</div>',
     '#tree' => TRUE,
     '#parents' => array('commerce_discount_fields'),
+  );
+  // Vertical tabs container.
+  $form['commerce_discount_fields']['additional_settings'] = array(
+    '#type' => 'vertical_tabs',
+    '#weight' => 99,
+    'discount_options' => array(
+      '#type' => 'fieldset',
+      '#title' => t('Discount options'),
+      '#collapsible' => TRUE,
+      '#weight' => -10,
+    ),
+    'commerce_discount_compatibility' => array(
+      '#type' => 'fieldset',
+      '#title' => t('Compatibility with other discounts'),
+      '#collapsible' => TRUE,
+    )
+  );
+
+  // Add radios for enabling or disabling this discount.
+  $form['commerce_discount_fields']['additional_settings']['discount_options']['status'] = array(
+    '#title' => t('Discount status'),
+    '#type' => 'radios',
+    '#parents' => array('status'),
+    '#options' => array(
+      TRUE => t('Active'),
+      FALSE => t('Disabled'),
+    ),
+    '#required' => FALSE,
+    '#default_value' => $commerce_discount->status,
+  );
+
+  // Add the sort order select list.
+  $form['commerce_discount_fields']['additional_settings']['discount_options']['sort_order'] = array(
+    '#type' => 'select',
+    '#parents' => array('sort_order'),
+    '#title' => t('Sort order'),
+    '#description' => t('Discounts will be sorted by this value to be evaluated in that order.'),
+    '#options' => drupal_map_assoc(range(1, 21)),
+    '#default_value' => !empty($commerce_discount->sort_order) ? $commerce_discount->sort_order : 10,
   );
 
   field_attach_form('commerce_discount', $commerce_discount, $form['commerce_discount_fields'], $form_state);
@@ -253,6 +274,18 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
       ),
     ),
   );
+
+  // We have to do some extra adjustments to move compatibility fields into
+  // the vertical tabs.
+  $form['commerce_discount_fields']['additional_settings']['commerce_discount_compatibility']['commerce_compatibility_strategy'] = $form['commerce_discount_fields']['commerce_compatibility_strategy'];
+  $form['commerce_discount_fields']['additional_settings']['commerce_discount_compatibility']['commerce_compatibility_strategy']['#parents'] = array(
+    'commerce_discount_fields', 'commerce_compatibility_strategy',
+  );
+  $form['commerce_discount_fields']['additional_settings']['commerce_discount_compatibility']['commerce_compatibility_selection'] = $form['commerce_discount_fields']['commerce_compatibility_selection'];
+  $form['commerce_discount_fields']['additional_settings']['commerce_discount_compatibility']['commerce_compatibility_selection']['#parents'] = array(
+    'commerce_discount_fields', 'commerce_compatibility_selection',
+  );
+  unset($form['commerce_discount_fields']['commerce_compatibility_strategy'], $form['commerce_discount_fields']['commerce_compatibility_selection']);
 
   $form['actions'] = array('#type' => 'actions');
   $form['actions']['submit'] = array(
