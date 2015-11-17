@@ -17,7 +17,7 @@
       $("input[name^='status']:checked", context).parent().each(function() {
         vals.push(Drupal.checkPlain($(this).text().trim()));
       });
-      vals.push(Drupal.t("Weight: @weight", {'@weight': $("select[name^='sort_order'] option:selected").val()}));
+      vals.push(Drupal.t("Sort order: @Sort order", {'@Sort order': $("select[name^='sort_order'] option:selected").val()}));
       return vals.join(', ');
     });
     $('fieldset#edit-commerce-discount-fields-additional-settings-commerce-discount-compatibility', context).drupalSetSummary(function(context) {
