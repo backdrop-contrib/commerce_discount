@@ -711,10 +711,10 @@ function commerce_discount_product_line_item_title($line_item) {
  */
 function commerce_discount_compatibility_strategies() {
   return array(
-    'any' => t('This discount is compatible with any other discount.'),
-    'except' => t('This discount is compatible with any discount except the selected discounts.'),
-    'only' => t('This discount is only compatible with the selected discounts.'),
-    'none' => t('This discount is not compatible with any other discount.'),
+    'any' => t('Any discount'),
+    'except' => t('Any discount except the selected discounts'),
+    'only' => t('Only with the selected discounts'),
+    'none' => t('Not with any other discounts'),
   );
 }
 

@@ -210,7 +210,7 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
     ),
     'commerce_discount_compatibility' => array(
       '#type' => 'fieldset',
-      '#title' => t('Compatibility with other discounts'),
+      '#title' => t('Discount compatibility'),
       '#collapsible' => TRUE,
     )
   );
