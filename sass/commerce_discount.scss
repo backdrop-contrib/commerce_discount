@@ -30,8 +30,14 @@
   }
 
   // General block margins.
-  #commerce-discount-fields-wrapper .form-wrapper {
-    margin-bottom: 15px;
+  #commerce-discount-fields-wrapper {
+    .form-wrapper {
+      margin-bottom: 15px;
+    }
+    .field-name-discount-usage-limit, .field-name-discount-usage-per-person {
+      float: none;
+      clear: both;
+    }
   }
 
   #edit-actions {

@@ -16,6 +16,8 @@ dependencies[] = commerce_price
 dependencies[] = commerce_line_item
 dependencies[] = commerce_product_reference
 dependencies[] = inline_conditions (>1.0-alpha4)
+dependencies[] = date
+dependencies[] = date_popup
 
 files[] = commerce_discount.info.inc
 files[] = includes/commerce_discount.admin.inc
@@ -27,6 +29,7 @@ files[] = includes/commerce_discount.controller.inc
 ; Views files
 files[] = includes/views/commerce_discount.views.inc
 files[] = includes/views/handlers/commerce_discount_handler_field_operations_dropbutton.inc
+files[] = includes/views/handlers/commerce_discount_handler_field_commerce_discount_analytics.inc
 
 ; Simple tests
 files[] = commerce_discount.test

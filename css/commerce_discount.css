@@ -23,6 +23,10 @@
 .commerce-discount-form #commerce-discount-fields-wrapper .form-wrapper {
   margin-bottom: 15px;
 }
+.commerce-discount-form #commerce-discount-fields-wrapper .field-name-discount-usage-limit, .commerce-discount-form #commerce-discount-fields-wrapper .field-name-discount-usage-per-person {
+  float: none;
+  clear: both;
+}
 .commerce-discount-form #edit-actions {
   clear: both;
 }

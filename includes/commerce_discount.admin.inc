@@ -197,6 +197,7 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
     '#suffix' => '</div>',
     '#tree' => TRUE,
     '#parents' => array('commerce_discount_fields'),
+    '#pre_render' => array('commerce_discount_form_pre_render'),
   );
   // Vertical tabs container.
   $form['commerce_discount_fields']['additional_settings'] = array(
@@ -274,6 +275,8 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
       ),
     ),
   );
+  // Add after_build to the date field.
+  $form['commerce_discount_fields']['commerce_discount_date']['#after_build'][] = 'commerce_discount_date_after_build';
 
   // We have to do some extra adjustments to move compatibility fields into
   // the vertical tabs.
@@ -309,6 +312,18 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
   else{
     $form['actions']['submit']['#suffix'] = l(t('Cancel'), 'admin/commerce/discounts');
   }
+
+  $form['commerce_discount_fields']['additional_settings']['commerce_discount_usage'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Maximum usage'),
+    '#collapsible' => TRUE,
+  );
+  $form['commerce_discount_fields']['additional_settings']['discount_date'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Discount dates'),
+    '#collapsible' => TRUE,
+    '#weight' => -1,
+  );
 
   // Add assets.
   $form['#attached']['js'][] = drupal_get_path('module', 'commerce_discount') . '/js/commerce_discount.js';
@@ -393,4 +408,47 @@ function commerce_discount_settings() {
     '#description' => t('Select the line item types that will be taken into account for calculating the discount amounts in percentage offers.'),
   );
   return system_settings_form($form);
+}
+
+/**
+ * Add fields to the additional_settings vertical tabs container.
+ */
+function commerce_discount_form_pre_render($fields) {
+  $fields['additional_settings']['commerce_discount_usage']['discount_usage_per_person'] = $fields['discount_usage_per_person'];
+  $fields['additional_settings']['commerce_discount_usage']['discount_usage_limit'] = $fields['discount_usage_limit'];
+  $fields['additional_settings']['discount_date']['commerce_discount_date'] = $fields['commerce_discount_date'];
+
+  unset($fields['discount_usage_per_person']);
+  unset($fields['discount_usage_limit']);
+  unset($fields['commerce_discount_date']);
+
+  return $fields;
+}
+
+/**
+ * After-build callback for altering the date field.
+ *
+ * @param $element
+ *   The date field.
+ *
+ * @return
+ *   The altered date field.
+ */
+function commerce_discount_date_after_build($element, $form_state) {
+  // Reset the titles.
+  $element[LANGUAGE_NONE][0]['value']['#title'] = t('Start date');
+  $element[LANGUAGE_NONE][0]['value2']['#title'] = t('End date');
+  $element[LANGUAGE_NONE][0]['value']['date']['#title'] = '';
+  $element[LANGUAGE_NONE][0]['value']['time']['#title'] = '';
+  $element[LANGUAGE_NONE][0]['value2']['date']['#title'] = '';
+  $element[LANGUAGE_NONE][0]['value2']['time']['#title'] = '';
+  $element[LANGUAGE_NONE][0]['#fieldset_description'] = '';
+
+  // Ignore the "Show end date" checkbox.
+  unset($element[LANGUAGE_NONE][0]['value2']['#states']);
+
+  // Check the "show end date" checkbox.
+  $element[LANGUAGE_NONE][0]['show_todate']['#checked'] = TRUE;
+
+  return $element;
 }

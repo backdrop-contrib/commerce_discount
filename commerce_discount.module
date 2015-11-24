@@ -488,6 +488,58 @@ function commerce_discount_commerce_discount_rule_build($rule, $discount) {
       }
     }
   }
+
+  // Product level discounts must pass the line item's order.
+  $map = array(
+    'order_discount' => 'commerce-order',
+    'product_discount' => 'commerce-line-item:order',
+  );
+
+  if (isset($map[$discount->type])) {
+    // Add condition for per-person usage.
+    if ($wrapper->discount_usage_per_person->value()) {
+      $rule->condition(
+        'commerce_discount_usage_max_usage_per_person',
+        array(
+          'commerce_discount' => $discount->name,
+          'order:select' => $map[$discount->type],
+          'usage' => $wrapper->discount_usage_per_person->value(),
+        )
+      );
+    }
+    // For normal usage.
+    if ($wrapper->discount_usage_limit->value()) {
+      $rule->condition(
+        'commerce_discount_usage_max_usage',
+        array(
+          'commerce_discount' => $discount->name,
+          'order:select' => $map[$discount->type],
+          'usage' => $wrapper->discount_usage_limit->value(),
+        )
+      );
+    }
+  }
+
+  if (!empty($discount->commerce_discount_date)) {
+    // Wrap the discount to compare its date value against the current timestamp.
+    // A quick test showed this actually used less memory than invoking
+    // field_get_items() directly, but I'm sure a more rigorous test could be
+    // considered in the future for checks as straightforward as this.
+    $wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+
+    // If the end date for the discount has already passed, disable the rule.
+    // Note that we add a day to the discount end date. The date field value is
+    // set for 12:00:00 AM on the end date, but we want the discount to remain
+    // valid through that day.
+    if (REQUEST_TIME >= $wrapper->commerce_discount_date->value2->value() + 86400) {
+      $rule->active = FALSE;
+    }
+
+    // Add condition to check usage didn't reach max uses.
+    $rule->condition('commerce_discount_date_condition', array(
+      'commerce_discount' => $discount->name,
+    ));
+  }
 }
 
 /**
@@ -832,4 +884,159 @@ function commerce_discount_get_free_shipping_strategy($discount) {
   // unknown discount strategies, so modules that set them are responsible also
   // to evaluate them on behalf of all discounts.
   return $strategy;
+}
+
+/**
+ * Get usage of a discount for a user, excluding a certain order id.
+ *
+ * @param string $discount_name
+ *   The discount name.
+ * @param string $mail
+ *   The user mail.
+ * @param bool $exclude_order_id
+ *   If TRUE, the order id will be excluded from the SQL request.
+ *
+ * @return int
+ *   Return the number of usage by mail.
+ */
+function commerce_discount_usage_get_usage_by_mail($discount_name, $mail, $exclude_order_id = FALSE) {
+  $query = db_select('commerce_discount_usage', 'g')
+    ->fields('g')
+    ->condition('g.mail', $mail)
+    ->condition('g.discount', $discount_name);
+
+  if ($exclude_order_id) {
+    $query->condition('g.order_id', $exclude_order_id, '<>');
+  }
+
+  return $query->execute()->rowCount();
+}
+
+/**
+ * Implements hook_commerce_order_update().
+ */
+function commerce_discount_commerce_order_update($order) {
+  commerce_discount_usage_record_order_usage($order);
+}
+
+/**
+ * Implements hook_commerce_order_insert().
+ */
+function commerce_discount_commerce_order_insert($order) {
+  commerce_discount_usage_record_order_usage($order);
+}
+
+/**
+ * Implements hook_commerce_order_delete().
+ */
+function commerce_discount_commerce_order_delete($order) {
+  commerce_discount_usage_reset_order_usage($order);
+}
+
+/**
+ * Load all discounts connected to an order, including line item level discounts
+ * traced through line item unit price components.
+ *
+ * @param object $order
+ *   A fully qualified order object.
+ *
+ * @return array
+ *  List of order discounts.
+ */
+function commerce_discount_usage_order_discounts($order) {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $order_discounts = array();
+
+  foreach ($order_wrapper->commerce_line_items as $line_item_wrapper) {
+    // If the current line item actually no longer exists, continue.
+    if (!$line_item_wrapper->value() || !isset($line_item_wrapper->commerce_unit_price)) {
+      continue;
+    }
+
+    $data = $line_item_wrapper->commerce_unit_price->data->value();
+
+    foreach ($data['components'] as $key => $component) {
+      if (strpos($component['name'], 'discount|') === 0 && !empty($component['price']['data']['discount_name'])) {
+        $order_discount_name = $component['price']['data']['discount_name'];
+        $order_discount_wrapper = entity_metadata_wrapper('commerce_discount', $order_discount_name);
+        // Make a list of discounts present via the order's line item price
+        // components.
+        if ($order_discount_wrapper->value()) {
+          $order_discounts[] = $order_discount_wrapper->name->value();
+        }
+      }
+    }
+  }
+
+  // Add the set of discounts directly referenced on the order.
+  if (isset($order->commerce_discounts) && $order_wrapper->commerce_discounts->value()) {
+    foreach ($order_wrapper->commerce_discounts->value() as $discount) {
+      $order_discounts[] = $discount->name;
+    }
+  }
+
+  $order_discounts = array_unique($order_discounts);
+
+  return $order_discounts;
+}
+
+/**
+ * Record order usage.
+ *
+ * @param object $order
+ *   A fully qualified order object.
+ */
+function commerce_discount_usage_record_order_usage($order) {
+  // Reset usage for this order first.
+  commerce_discount_usage_reset_order_usage($order);
+
+  // Only record discount usage if the order has an email.
+  $discount_names = commerce_discount_usage_order_discounts($order);
+
+  foreach ($discount_names as $discount_name) {
+    $record = array(
+      'discount' => $discount_name,
+      'mail' => $order->mail ? $order->mail : '',
+      'order_id' => $order->order_id
+    );
+    drupal_write_record('commerce_discount_usage', $record);
+  }
+}
+
+/**
+ * Reset usage statistics for an entire order.
+ *
+ * @param object $order
+ *   A fully qualified order object.
+ *
+ * @return DeleteQuery
+ *   Return a new DeleteQuery object.
+ */
+function commerce_discount_usage_reset_order_usage($order) {
+  return db_delete('commerce_discount_usage')
+    ->condition('order_id', $order->order_id)
+    ->execute();
+}
+
+/**
+ * Get usage of a discount, excluding a certain order id.
+ *
+ * @param string $discount_name
+ *   The discount name.
+ * @param bool $exclude_order_id
+ *   If TRUE, the order id will be excluded from the SQL request.
+ *
+ * @return int
+ *   Return the number of usage.
+ */
+function commerce_discount_usage_get_usage($discount_name, $exclude_order_id = FALSE) {
+  $query = db_select('commerce_discount_usage', 'g')
+    ->fields('g')
+    ->condition('g.discount', $discount_name);
+
+  if ($exclude_order_id) {
+    $query->condition('g.order_id', $exclude_order_id, '<>');
+  }
+
+  return $query->execute()->rowCount();
 }
