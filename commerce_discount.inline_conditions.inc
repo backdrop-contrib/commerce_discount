@@ -405,8 +405,6 @@ function commerce_order_has_specific_quantity_products_configure($settings) {
     }
   }
 
-  $form = array();
-
   $form['products'] = array(
     '#type' => 'textfield',
     '#title' => t('Products'),
@@ -419,15 +417,12 @@ function commerce_order_has_specific_quantity_products_configure($settings) {
     '#attributes' => array('placeholder' => array(t('enter product name'))),
   );
 
+  module_load_include('inc', 'commerce_discount', 'commerce_discount.rules');
   $form['operator'] = array(
     '#type' => 'select',
-    '#title' => t('Operator'),
-    '#title_display' => 'invisible',
-    '#options' => array(
-      '<' => t('quantity lower than'),
-      '==' => t('quantity equals'),
-      '>' => t('quantity greater than'),
-    ),
+    '#title' => t('Quantity'),
+    '#title_display' => 'before',
+    '#options' => _commerce_discount_operator_options(),
     '#default_value' => !empty($settings['operator']) ? $settings['operator'] : '==',
   );
 
@@ -435,7 +430,7 @@ function commerce_order_has_specific_quantity_products_configure($settings) {
     '#type' => 'textfield',
     '#title' => t('Quantity'),
     '#title_display' => 'invisible',
-    '#default_value' => !empty($settings['quantity']) ? $settings['quantity'] : '',
+    '#default_value' => !empty($settings['quantity']) ? $settings['quantity'] : '1',
     '#size' => 5,
     '#required' => TRUE,
     '#element_validate' => array('element_validate_integer'),
@@ -455,8 +450,6 @@ function commerce_order_has_specific_quantity_products_configure($settings) {
  *   A form element array.
  */
 function commerce_order_compare_address_configure($settings) {
-  $form = array();
-
   module_load_include('inc', 'commerce_order', 'commerce_order.rules');
 
   // Need a list of all address fields on customer profile bundles.

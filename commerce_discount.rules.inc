@@ -203,7 +203,7 @@ function commerce_discount_rules_condition_info() {
           'label' => t('Operator'),
           'description' => t('The operator used with the product quantity value below.'),
           'default value' => '>=',
-          'options list' => '_inline_conditions_order_operator_options',
+          'options list' => '_commerce_discount_operator_options',
         ),
         'quantity' => array(
           'type' => 'integer',
