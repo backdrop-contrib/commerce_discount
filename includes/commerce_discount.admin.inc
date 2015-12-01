@@ -177,8 +177,6 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
     '#field_suffix' => '</span>&lrm;',
   );
 
-
-
   // Show a list of commerce discounts.
   $form['commerce_discount_type'] = array(
     '#title' => t('Choose discount type'),
@@ -213,7 +211,7 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
       '#type' => 'fieldset',
       '#title' => t('Discount compatibility'),
       '#collapsible' => TRUE,
-    )
+    ),
   );
 
   // Add radios for enabling or disabling this discount.
@@ -306,10 +304,10 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
       '#weight' => 45,
       '#limit_validation_errors' => array(),
       '#submit' => array('commerce_discount_form_submit_delete'),
-      '#suffix' => l(t('Cancel'), 'admin/commerce/discounts')
+      '#suffix' => l(t('Cancel'), 'admin/commerce/discounts'),
     );
   }
-  else{
+  else {
     $form['actions']['submit']['#suffix'] = l(t('Cancel'), 'admin/commerce/discounts');
   }
 

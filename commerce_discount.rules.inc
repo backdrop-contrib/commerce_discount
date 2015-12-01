@@ -159,6 +159,18 @@ function commerce_discount_rules_condition_info() {
           'description' => t('The order.'),
           'wrapped' => TRUE,
         ),
+        'operator' => array(
+          'type' => 'text',
+          'label' => t('Operator'),
+          'description' => t('The operator used with the SKUs below.'),
+          'default value' => 'all',
+          'options list' => array(
+            'any' => t('any products'),
+            'all' => t('all products'),
+            'exactly' => t('exclusively all products'),
+            'only' => t('exclusively any products'),
+          ),
+        ),
         'products' => array(
           'type' => 'text',
           'label' => t('Product SKU(s)'),
@@ -420,8 +432,8 @@ function commerce_discount_rules_event_info() {
  *
  * @param \EntityDrupalWrapper $order_wrapper
  *   The order the discount would be applied to.
- * @param \EntityDrupalWrapper $discount_wrapper
- *   The discount whose compatibility needs to be checked.
+ * @param string $discount_name
+ *   The discount name whose compatibility needs to be checked.
  */
 function commerce_discount_compatibility_check(EntityDrupalWrapper $order_wrapper, $discount_name) {
   // Ensure the discount we're loading still exists.
@@ -506,15 +518,14 @@ function commerce_discount_compatibility_check(EntityDrupalWrapper $order_wrappe
 }
 
 /**
- * Returns an options list for commerce_order_compare_order_amount line item types.
+ * Options list for commerce_order_compare_order_amount line item types.
  */
 function commerce_order_compare_order_amount_options_list() {
   return array_diff_key(commerce_line_item_type_options_list(), drupal_map_assoc(array('commerce_discount', 'product_discount')));
 }
 
 /**
- * Returns a default value array for commerce_order_compare_order_amount line
- * item types.
+ * Default value array for commerce_order_compare_order_amount line item types.
  */
 function commerce_order_compare_order_amount_options_default() {
   return drupal_map_assoc(array_keys(commerce_order_compare_order_amount_options_list()));
@@ -614,20 +625,49 @@ function commerce_order_has_owner_build(EntityDrupalWrapper $wrapper, $account) 
  * @return bool
  *   Returns True if condition is valid. False otherwise.
  */
-function commerce_order_contains_products_build(EntityDrupalWrapper $wrapper, $products) {
-
+function commerce_order_contains_products_build(EntityDrupalWrapper $wrapper, $operator, $products) {
+  // Split by comma. Allow some grace for spaces.
   $products_sku = explode(', ', (string) $products);
+  $order_skus = array();
 
   foreach ($wrapper->commerce_line_items as $wrapper_line_item) {
     // Ensures the passed line item is a product.
     if (in_array('commerce_product', array_keys($wrapper_line_item->getPropertyInfo()))) {
-      if (($key = array_search($wrapper_line_item->commerce_product->sku->value(), $products_sku)) !== FALSE) {
-        unset($products_sku[$key]);
-      }
+      $order_skus[] = $wrapper_line_item->commerce_product->sku->value();
     }
   }
 
-  return empty($products_sku);
+  // Products that are in the list but not on the order.
+  $list_but_not_order = array_diff($products_sku, $order_skus);
+
+  if ($operator == 'all') {
+    // If the array is empty, then everything in the list is on the order.
+    return (count($list_but_not_order) == 0);
+  }
+  elseif ($operator == 'any') {
+    // If the number of items in the list isn't the same as the products_sku,
+    // then we know that at least one of the items is on the order.
+    return (count($list_but_not_order) != count($products_sku));
+  }
+  else {
+    // Generate a list of products that are on the order but not on the list.
+    $order_but_not_list = array_diff($order_skus, $products_sku);
+
+    if ($operator == 'only') {
+      // If all of the order SKUs are on the list and the list of product SKUs
+      // is not the same as the original list, then the order contains at least
+      // one of the products in the list and doesn't include any products not
+      // on the list.
+      return empty($order_but_not_list) && (count($list_but_not_order) != count($products_sku));
+    }
+    elseif ($operator == 'exactly') {
+      // If both arrays are empty, then the order contains every product on
+      // the list but no additional products.
+      return empty($list_but_not_order) && empty($order_but_not_list);
+    }
+  }
+
+  return FALSE;
 }
 
 /**
