@@ -401,7 +401,7 @@ function commerce_discount_settings() {
   $form['commerce_discount_line_item_types'] = array(
     '#type' => 'checkboxes',
     '#title' => t('Line item types to use for discounts'),
-    '#default_value' => variable_get('commerce_discount_line_item_types', array('product')),
+    '#default_value' => variable_get('commerce_discount_line_item_types', array_diff(commerce_product_line_item_types(), array('product_discount'))),
     '#options' => $types,
     '#description' => t('Select the line item types that will be taken into account for calculating the discount amounts in percentage offers.'),
   );

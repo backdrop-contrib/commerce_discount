@@ -886,7 +886,7 @@ function commerce_discount_percentage(EntityDrupalWrapper $wrapper, $discount_na
   $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount_name);
   $rate = $discount_wrapper->commerce_discount_offer->commerce_percentage->value() / 100;
   // Get the line item types to apply the discount to.
-  $line_item_types = variable_get('commerce_discount_line_item_types', array('product' => 'product'));
+  $line_item_types = variable_get('commerce_discount_line_item_types', array_diff(commerce_product_line_item_types(), array('product_discount')));
 
   switch ($wrapper->type()) {
     case 'commerce_order':
@@ -906,7 +906,7 @@ function commerce_discount_percentage(EntityDrupalWrapper $wrapper, $discount_na
       $calculated_discount = 0;
       // Loop the line items of the order and calculate the total discount.
       foreach ($wrapper->commerce_line_items as $line_item_wrapper) {
-        if (!empty($line_item_types[$line_item_wrapper->type->value()])) {
+        if (in_array($line_item_wrapper->type->value(), $line_item_types)) {
           $line_item_total = commerce_price_wrapper_value($line_item_wrapper, 'commerce_total', TRUE);
           $calculated_discount += $line_item_total['amount'] * $rate;
         }
@@ -932,7 +932,7 @@ function commerce_discount_percentage(EntityDrupalWrapper $wrapper, $discount_na
     case 'commerce_line_item':
       // Check if the line item is configured in the settings to apply the
       // discount.
-      if (empty($line_item_types[$wrapper->getBundle()])) {
+      if (!in_array($wrapper->getBundle(), $line_item_types)) {
         return;
       }
 
