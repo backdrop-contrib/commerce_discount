@@ -793,14 +793,14 @@ function commerce_product_has_specified_terms_build(EntityDrupalWrapper $wrapper
       if (preg_match('/taxonomy_term/', $property['type'])) {
         // If the wrapped field is an instance of EntityListWrapper class, that
         // means that field contains multiple values.
-        if ($wrapper->commerce_product->$field_name instanceof EntityListWrapper) {
-          foreach ($wrapper->commerce_product->$field_name as $wrapper_term) {
+        if ($wrapper->commerce_product->{$field_name} instanceof EntityListWrapper) {
+          foreach ($wrapper->commerce_product->{$field_name} as $wrapper_term) {
             if (($key = array_search($wrapper_term->getIdentifier(), $terms_name)) !== FALSE) {
               unset($terms_name[$key]);
             }
           }
         }
-        elseif ($term = $wrapper->commerce_product->$field_name->value()) {
+        elseif ($term = $wrapper->commerce_product->{$field_name}->value()) {
           if (($key = array_search($term->tid, $terms_name)) !== FALSE) {
             unset($terms_name[$key]);
           }

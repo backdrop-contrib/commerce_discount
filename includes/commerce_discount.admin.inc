@@ -21,7 +21,7 @@ class CommerceDiscountUIController extends EntityDefaultUIController {
     form_state_values_clean($form_state);
     foreach ($form_state['values'] as $key => $value) {
       if ($key != 'commerce_discount_fields') {
-        $entity->$key = $value;
+        $entity->{$key} = $value;
       }
       else {
         $discount_offer = $value['commerce_discount_offer'][LANGUAGE_NONE]['form'];
