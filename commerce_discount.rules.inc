@@ -727,6 +727,15 @@ function commerce_order_has_specific_quantity_products_build(EntityDrupalWrapper
             }
             break;
 
+          case '<=':
+            if ($wrapper_line_item->quantity->value() <= $quantity) {
+              unset($products_sku[$key]);
+            }
+            else {
+              return FALSE;
+            }
+            break;
+
           case '==':
             if ($wrapper_line_item->quantity->value() == $quantity) {
               unset($products_sku[$key]);
@@ -738,6 +747,15 @@ function commerce_order_has_specific_quantity_products_build(EntityDrupalWrapper
 
           case '>':
             if ($wrapper_line_item->quantity->value() > $quantity) {
+              unset($products_sku[$key]);
+            }
+            else {
+              return FALSE;
+            }
+            break;
+
+          case '>=':
+            if ($wrapper_line_item->quantity->value() >= $quantity) {
               unset($products_sku[$key]);
             }
             else {

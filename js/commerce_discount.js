@@ -25,17 +25,17 @@
           val;
 
       val = $('input[name="commerce_discount_fields[commerce_compatibility_strategy][und]"]:checked', context).val();
-      if (val == "any") {
+      if (val == 'any') {
         return Drupal.t('Compatible with all');
       }
-      else if(val == "only" || val == "except") {
+      else if (val == 'only' || val == 'except') {
         selected = $('input[name^="commerce_discount_fields[commerce_compatibility_selection]"][name$="[target_id]"]', context).each(function (context) {
           var ruleName = Drupal.checkPlain($(this).val().replace(/ \(\d+\)/, '').trim());
           if (ruleName != '') {
             vals.push(ruleName);
           }
         });
-        if (val == "only") {
+        if (val == 'only') {
           if (vals.length == 0) {
             return Drupal.t('Incompatible with all');
           }
@@ -58,7 +58,7 @@
           }
         }
       }
-      else if (val == "none") {
+      else if (val == 'none') {
         return Drupal.t('Incompatible with all');
       }
     });
@@ -100,7 +100,7 @@
           vals = [];
 
       vals.push(Drupal.t('!usagePerPerson per person', {'!usagePerPerson': usagePerPerson > 0 ? Drupal.checkPlain(usagePerPerson) : '&#8734;'}));
-      vals.push(Drupal.t('!overallUsage total', {'!overallUsage': overallUsage > 0 ? Drupal.checkPlain(overallUsage): '&#8734;'}));
+      vals.push(Drupal.t('!overallUsage total', {'!overallUsage': overallUsage > 0 ? Drupal.checkPlain(overallUsage) : '&#8734;'}));
 
       return vals.join(', ');
     });

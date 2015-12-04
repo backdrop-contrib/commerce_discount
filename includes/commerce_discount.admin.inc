@@ -428,6 +428,11 @@ function commerce_discount_form_pre_render($fields) {
  *
  * @param $element
  *   The date field.
+ * @param $form_state
+ *   A keyed array containing the current state of the form. In this
+ *   context, it is used to accumulate information about which button
+ *   was clicked when the form was submitted, as well as the sanitized
+ *   $_POST data.
  *
  * @return
  *   The altered date field.
