@@ -34,6 +34,7 @@
     .form-wrapper {
       margin-bottom: 15px;
     }
+
     .field-name-discount-usage-limit, .field-name-discount-usage-per-person {
       float: none;
       clear: both;
@@ -54,9 +55,11 @@
 
     .form-item {
       @include btn;
+
       [dir="ltr"] & {
         float: left;
       }
+
       [dir="rtl"] & {
         float: right;
       }
@@ -74,7 +77,9 @@
 
 #edit-commerce-discount-type {
   padding: 0;
+
   @include radio-buttons;
+
   margin-top: 10px;
   clear: none;
 
@@ -83,6 +88,7 @@
       float: left;
       margin-right: 20px;
     }
+
     [dir="rtl"] & {
       float: right;
       margin-left: 20px;
@@ -107,6 +113,7 @@
 .field-name-commerce-discount-offer {
   // Help with floaties inside.
   @include clearfix;
+
   border: none;
   margin: 0;
   padding: 0;
@@ -114,9 +121,11 @@
   .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type {
     label {
       border-bottom: 1px solid $gray2;
+
       [dir="ltr"] & {
         padding-left: 5px;
       }
+
       [dir="rtl"] & {
         padding-right: 5px;
       }
@@ -124,21 +133,25 @@
 
     .form-radios {
       @include radio-buttons;
+
       background-color: transparent;
       margin: 10px;
       padding: 4px 0;
+
       [dir="ltr"] & {
         float: left;
         margin-right: 20px;
         padding-right: 20px;
         border-right: 1px dotted $gray2;
       }
+
       [dir="rtl"] & {
         float: right;
         margin-left: 20px;
         padding-left: 20px;
         border-left: 1px dotted $gray2;
       }
+
       .form-item {
         &.selected {
           background-color: #eee;
@@ -151,9 +164,11 @@
 
       label {
         border-bottom: 0;
+
         [dir="ltr"] & {
           padding-left: 0;
         }
+
         [dir="rtl"] & {
           padding-right: 0;
         }
@@ -164,11 +179,13 @@
   // The two columns for the offer type.
   .ief-form > .fieldset-wrapper {
     @include clearfix;
+
     & > .form-type-radios,
     & > .commerce-offer-fields-wrapper {
       [dir="ltr"] & {
         float: left;
       }
+
       [dir="rtl"] & {
         float: right;
       }
@@ -183,9 +200,11 @@
     .form-wrapper {
       label {
         border-bottom: 0;
+
         [dir="ltr"] & {
           padding-left: 0;
         }
+
         [dir="rtl"] & {
           padding-right: 0;
         }
@@ -199,39 +218,55 @@
  */
 .field-name-commerce-discount-date {
   clear: both;
+
   .form-wrapper fieldset.form-wrapper {
     margin: 0;
   }
 
   .fieldset-wrapper {
-    .container-inline-date {
-      &.start-date-wrapper {
-        padding-top: 0;
-      }
-      clear: none;
-      [dir="ltr"] & {
-        float: left;
-      }
-      [dir="rtl"] & {
-        float: right;
-      }
-      .date-padding {
-        [dir="ltr"] & {
-          float: left;
-        }
-        [dir="rtl"] & {
-          float: right;
-        }
-
-        padding: 0;
-      }
-    }
-
     background-color: transparent;
     display: inline-block;
     margin: 10px;
     padding: 4px;
     width: auto;
+  }
+
+  .container-inline-date {
+    clear: none;
+
+    [dir="ltr"] & {
+      float: left;
+    }
+
+    [dir="rtl"] & {
+      float: right;
+    }
+
+    .date-padding {
+      [dir="ltr"] & {
+        float: left;
+      }
+
+      [dir="rtl"] & {
+        float: right;
+      }
+    }
+
+    .form-text {
+      background-image: url(../images/calendar.svg);
+      background-repeat: no-repeat;
+      background-position: calc(100% - 0.25em) center;
+      background-size: 1.25em;
+    }
+  }
+
+  // Date.css override.
+  fieldset.date-combo .container-inline-date .date-padding {
+    padding: 0;
+  }
+  // Vertical tab fix.
+  fieldset.date-combo .fieldset-wrapper > .container-inline-date {
+    padding-top: 0;
   }
 }
 
@@ -253,9 +288,11 @@
     [dir="ltr"] & {
       float: left;
     }
+
     [dir="rtl"] & {
       float: right;
     }
+
     margin: 10px;
   }
 
@@ -266,13 +303,16 @@
       [dir="ltr"] & {
         float: left;
         margin-left: 30px;
+
         &:first-child {
           margin-left: 0;
         }
       }
+
       [dir="rtl"] & {
         float: right;
         margin-right: 30px;
+
         &:first-child {
           margin-right: 0;
         }
@@ -288,9 +328,11 @@
     [dir="ltr"] & {
       float: left;
     }
+
     [dir="rtl"] & {
       float: right;
     }
+
     .form-item {
       padding: 0;
     }
@@ -298,9 +340,11 @@
     label {
       display: inline;
       font-weight: normal;
+
       [dir="ltr"] & {
         margin-left: 10px;
       }
+
       [dir="rtl"] & {
         margin-right: 10px;
       }
@@ -326,6 +370,7 @@
 
     th {
       text-transform: none;
+
       .views-field-enable-disable {}
 
       .views-field-operations-dropbutton {
@@ -356,12 +401,15 @@
         li {
           display: block;
           width: 50%;
+
           [dir="ltr"] & {
             float: left;
           }
+
           [dir="rtl"] & {
             float: right;
           }
+
           text-transform: uppercase;
           padding: 5px 0;
           font-weight: bold;
@@ -390,6 +438,7 @@
         .ctools-dropbutton {
           border: 1px solid $gray2;
           border-radius: 10px;
+
           @include gradient;
 
           .ctools-content {
