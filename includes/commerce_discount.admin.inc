@@ -273,8 +273,6 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
       ),
     ),
   );
-  // Add after_build to the date field.
-  $form['commerce_discount_fields']['commerce_discount_date']['#after_build'][] = 'commerce_discount_date_after_build';
 
   // We have to do some extra adjustments to move compatibility fields into
   // the vertical tabs.
@@ -424,7 +422,7 @@ function commerce_discount_form_pre_render($fields) {
 }
 
 /**
- * After-build callback for altering the date field.
+ * Implements function hook_date_combo_process_alter().
  *
  * @param $element
  *   The date field.
@@ -437,21 +435,41 @@ function commerce_discount_form_pre_render($fields) {
  * @return
  *   The altered date field.
  */
-function commerce_discount_date_after_build($element, $form_state) {
-  // Reset the titles.
-  $element[LANGUAGE_NONE][0]['value']['#title'] = t('Start date');
-  $element[LANGUAGE_NONE][0]['value2']['#title'] = t('End date');
-  $element[LANGUAGE_NONE][0]['value']['date']['#title'] = '';
-  $element[LANGUAGE_NONE][0]['value']['time']['#title'] = '';
-  $element[LANGUAGE_NONE][0]['value2']['date']['#title'] = '';
-  $element[LANGUAGE_NONE][0]['value2']['time']['#title'] = '';
-  $element[LANGUAGE_NONE][0]['#fieldset_description'] = '';
+function commerce_discount_date_combo_process_alter(&$element, &$form_state, $context) {
+  if ($element['#field_name'] == 'commerce_discount_date') {
+    $element['#attributes'] = 'container-inline';
 
-  // Ignore the "Show end date" checkbox.
-  unset($element[LANGUAGE_NONE][0]['value2']['#states']);
+    // Hide the checkbox for showing the end date.
+    $element['show_todate']['#type'] = 'value';
+    $element['show_todate']['#default_value'] = TRUE;
+    unset($element['show_todate']['#prefix']);
+    unset($element['show_todate']['#suffix']);
 
-  // Check the "show end date" checkbox.
-  $element[LANGUAGE_NONE][0]['show_todate']['#checked'] = TRUE;
+    // Ignore the "Show end date" checkbox.
+    unset($element['value2']['#states']);
 
-  return $element;
+    // Remove fieldset description.
+    $element['#fieldset_description'] = '';
+  }
+}
+
+/**
+ * Implements hook_date_popup_process_alter().
+ */
+function commerce_discount_date_popup_process_alter(&$element, &$form_state, $context) {
+  if ($element['#field']['field_name'] == 'commerce_discount_date') {
+    unset($element['#attributes']['class']); // date-clear.
+    array_shift($element['#wrapper_attributes']['class']);
+    // Reset the titles and descriptions of the start and end date fields.
+    $field_name = end($element['#parents']);
+    if ($field_name == 'value') {
+      $element['date']['#title'] = t('Start date');
+      $element['date']['#description'] = t('Starts at 12:00:00 AM');
+    }
+    else {
+      $element['date']['#title'] = t('End date');
+      $element['date']['#description'] = t('Ends after 11:59:59 PM');
+    }
+    $element['#title'] = '';
+  }
 }

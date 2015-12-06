@@ -199,14 +199,33 @@
  */
 .field-name-commerce-discount-date {
   clear: both;
-  @include fieldset-title;
-
   .form-wrapper fieldset.form-wrapper {
     margin: 0;
   }
 
   .fieldset-wrapper {
-    @include fieldset-content;
+    .container-inline-date {
+      &.start-date-wrapper {
+        padding-top: 0;
+      }
+      clear: none;
+      [dir="ltr"] & {
+        float: left;
+      }
+      [dir="rtl"] & {
+        float: right;
+      }
+      .date-padding {
+        [dir="ltr"] & {
+          float: left;
+        }
+        [dir="rtl"] & {
+          float: right;
+        }
+
+        padding: 0;
+      }
+    }
 
     background-color: transparent;
     display: inline-block;

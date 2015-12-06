@@ -222,51 +222,27 @@
 .field-name-commerce-discount-date {
   clear: both;
 }
-.field-name-commerce-discount-date fieldset.form-wrapper {
-  border: none;
-}
-.field-name-commerce-discount-date fieldset.form-wrapper legend {
-  width: 100%;
-}
-.field-name-commerce-discount-date fieldset.form-wrapper .fieldset-legend {
-  border-bottom: 1px solid #ccc;
-  display: block;
-  margin-top: 0;
-  text-transform: none;
-  width: 100%;
-}
-[dir="ltr"] .field-name-commerce-discount-date fieldset.form-wrapper .fieldset-legend {
-  padding-left: 0;
-}
-[dir="rtl"] .field-name-commerce-discount-date fieldset.form-wrapper .fieldset-legend {
-  padding-right: 0;
-}
 .field-name-commerce-discount-date .form-wrapper fieldset.form-wrapper {
   margin: 0;
 }
 .field-name-commerce-discount-date .fieldset-wrapper {
-  padding: 0;
   background-color: transparent;
   display: inline-block;
   margin: 10px;
   padding: 4px;
   width: auto;
 }
-.field-name-commerce-discount-date .fieldset-wrapper .form-type-checkbox {
-  display: none;
-}
 .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date {
   clear: none;
-  width: auto;
+}
+.field-name-commerce-discount-date .fieldset-wrapper .container-inline-date.start-date-wrapper {
+  padding-top: 0;
 }
 [dir="ltr"] .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date {
   float: left;
 }
 [dir="rtl"] .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date {
   float: right;
-}
-.field-name-commerce-discount-date .fieldset-wrapper .container-inline-date .form-item {
-  padding: 0;
 }
 .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date .date-padding {
   padding: 0;
@@ -276,39 +252,6 @@
 }
 [dir="rtl"] .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date .date-padding {
   float: right;
-}
-.field-name-commerce-discount-date .fieldset-wrapper .container-inline-date .date-padding input.form-text {
-  width: 55px;
-}
-.field-name-commerce-discount-date .fieldset-wrapper .container-inline-date .date-padding > .form-item:first-child input.form-text {
-  background: white url("../images/calendar.png") no-repeat;
-  width: 100px;
-}
-[dir="ltr"] .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date .date-padding > .form-item:first-child input.form-text {
-  background-position: 86px 0;
-}
-[dir="rtl"] .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date .date-padding > .form-item:first-child input.form-text {
-  background-position: 2px 0;
-}
-.field-name-commerce-discount-date .fieldset-wrapper .container-inline-date > .form-item {
-  border: none;
-}
-.field-name-commerce-discount-date .fieldset-wrapper .container-inline-date label {
-  display: block;
-}
-[dir="ltr"] .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date label {
-  float: left;
-  padding-right: 10px;
-}
-[dir="rtl"] .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date label {
-  float: right;
-  padding-left: 10px;
-}
-[dir="ltr"] .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date.end-date-wrapper {
-  margin-left: 20px;
-}
-[dir="rtl"] .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date.end-date-wrapper {
-  margin-right: 20px;
 }
 
 /**
