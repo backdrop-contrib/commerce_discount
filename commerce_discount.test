@@ -513,6 +513,45 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
   }
 
   /**
+   * Test a 100% off product percentage discount.
+   *
+   * A 100% off product-level discount differs from the "Free product" discount
+   * offer type since those are normally used as an "add-on" that is added
+   * without the user's interaction (maybe as part of a package, or bonus);
+   * whereas a 100% off discount should be used for any product purposely added
+   * to a cart order.
+   */
+  public function testCommerceDiscountOneHundredPercentOff() {
+    // Login as the store admin.
+    $this->drupalLogin($this->store_admin);
+
+    // Create a 100% off discount and create a test product.
+    $this->createDiscount('product_discount', 'percentage', 100, 'freebie');
+
+    $product = $this->createDummyProduct('TEST-PRODUCT', 'Test Product', 999);
+
+    // Create the order and apply the freebie discount.
+    $order = $this->createDummyOrder($this->store_admin->uid, array($product->product_id => 1));
+    $order_wrapper = commerce_cart_order_refresh($order);
+
+    $properly_applied = $this->discountAppliedToOrder('freebie', $order);
+    $this->assertTrue($properly_applied, t('100% off discount applied to a product.'));
+
+    // Invoke line item price re-calculation.
+    $line_item = $order_wrapper->commerce_line_items->get(0)->value();
+    rules_invoke_event('commerce_product_calculate_sell_price', $line_item);
+
+    $order_wrapper = commerce_cart_order_refresh($order);
+
+    // Verify that the product is now free.
+    $line_item_wrapper = $order_wrapper->commerce_line_items->get(0);
+    $unit_price = $line_item_wrapper->commerce_unit_price->value();
+
+    $this->assertEqual($unit_price['amount'], 0, 'Product line item unit price amount is properly set to 0.');
+    $this->assertEqual($unit_price['data']['components'][1]['price']['amount'], -999, 'Product line item unit price discount component properly set to 100% of the product price.');
+  }
+
+  /**
    * Test free bonus products order discounts.
    */
   public function testCommerceDiscountFreeProductsOrderDiscount() {
