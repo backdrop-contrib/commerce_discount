@@ -32,7 +32,14 @@ files[] = includes/views/handlers/commerce_discount_handler_field_operations_dro
 files[] = includes/views/handlers/commerce_discount_handler_field_commerce_discount_analytics.inc
 
 ; Simple tests
-files[] = commerce_discount.test
+files[] = tests/commerce_discount.test
+files[] = tests/commerce_discount_base.test
+files[] = tests/commerce_discount_conditions.test
+files[] = tests/commerce_discount_date.test
+files[] = tests/commerce_discount_date_ui.test
+files[] = tests/commerce_discount_ui.test
+files[] = tests/commerce_discount_usage.test
+files[] = tests/commerce_discount_usage_ui.test
 
 test_dependencies[] = addressfield
 test_dependencies[] = commerce_shipping
