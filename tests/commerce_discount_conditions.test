@@ -113,4 +113,47 @@ class CommerceDiscountConditionsTest extends CommerceDiscountTestBase {
     }
   }
 
+  /**
+   * Test commerce_product_contains_products() condition.
+   */
+  public function testCommerceProductContainsProducts() {
+    $discount = $this->createDiscount('product_discount', 'fixed_amount', 100, 'product_sku_discount');
+    $discount->inline_conditions[LANGUAGE_NONE][0] = array(
+      'condition_name' => 'commerce_product_contains_products',
+      'condition_settings' => array(
+        'sku' => array(
+          array('product_id' => $this->products['c']->product_id),
+        ),
+      ),
+    );
+    entity_save('commerce_discount', $discount);
+
+    // Calculated price has discount.
+    $calculated_data = commerce_product_calculate_sell_price($this->products['c']);
+    $discounts = commerce_discount_get_discounts_applied_to_price($calculated_data);
+    $this->assertTrue(!empty($discounts));
+
+    $calculated_data = commerce_product_calculate_sell_price($this->products['b']);
+    $discounts = commerce_discount_get_discounts_applied_to_price($calculated_data);
+    $this->assertTrue(empty($discounts));
+
+    // Orders have discount.
+    $order = $this->createDummyOrder($this->store_customer->uid, array(
+      $this->products['c']->product_id => 1,
+    ));
+    // Refresh the order to apply the discounts.
+    commerce_cart_order_refresh($order);
+    $this->assertTrue($this->discountAppliedToOrder('product_sku_discount', $order));
+
+    // Delete order createDummyOrder method uses commerce_cart_order_load.
+    commerce_order_delete($order->order_id);
+
+    $order2 = $this->createDummyOrder($this->store_customer->uid, array(
+      $this->products['b']->product_id => 1,
+    ));
+    // Refresh the order to apply the discounts.
+    commerce_cart_order_refresh($order2);
+    $this->assertFalse($this->discountAppliedToOrder('product_sku_discount', $order2));
+  }
+
 }
