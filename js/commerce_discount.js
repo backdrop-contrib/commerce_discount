@@ -13,52 +13,52 @@
 
     // Provide the vertical tab summaries.
     $('fieldset#edit-commerce-discount-fields-additional-settings-discount-options', context).drupalSetSummary(function(context) {
-      var vals = [];
+      var values = [];
       $("input[name^='status']:checked", context).parent().each(function() {
-        vals.push(Drupal.checkPlain($(this).text().trim()));
+        values.push(Drupal.checkPlain($(this).text().trim()));
       });
-      vals.push(Drupal.t("Sort order: @Sort order", {'@Sort order': $("select[name^='sort_order'] option:selected").val()}));
-      return vals.join(', ');
+      values.push(Drupal.t("Sort order: @Sort order", {'@Sort order': $("select[name^='sort_order'] option:selected").val()}));
+      return values.join(', ');
     });
     $('fieldset#edit-commerce-discount-fields-additional-settings-commerce-discount-compatibility', context).drupalSetSummary(function(context) {
-      var vals = [],
-          val;
+      var values = [],
+          value;
 
-      val = $('input[name="commerce_discount_fields[commerce_compatibility_strategy][und]"]:checked', context).val();
-      if (val == 'any') {
+      value = $('input[name="commerce_discount_fields[commerce_compatibility_strategy][und]"]:checked', context).val();
+      if (value == 'any') {
         return Drupal.t('Compatible with all');
       }
-      else if (val == 'only' || val == 'except') {
+      else if (value == 'only' || value == 'except') {
         selected = $('input[name^="commerce_discount_fields[commerce_compatibility_selection]"][name$="[target_id]"]', context).each(function (context) {
           var ruleName = Drupal.checkPlain($(this).val().replace(/ \(\d+\)/, '').trim());
           if (ruleName != '') {
-            vals.push(ruleName);
+            values.push(ruleName);
           }
         });
-        if (val == 'only') {
-          if (vals.length == 0) {
+        if (value == 'only') {
+          if (values.length == 0) {
             return Drupal.t('Incompatible with all');
           }
-          else if (vals.length == 1) {
-            return Drupal.t('Only with @selected', {'@selected': vals.shift()});
+          else if (values.length == 1) {
+            return Drupal.t('Only with @selected', {'@selected': values.shift()});
           }
           else {
-            return Drupal.t('Only with @selected and @remaining more...', {'@selected': vals.shift(), '@remaining': vals.length});
+            return Drupal.t('Only with @selected and @remaining more...', {'@selected': values.shift(), '@remaining': values.length});
           }
         }
         else {
-          if (vals.length == 0) {
+          if (values.length == 0) {
             return Drupal.t('Compatible with all');
           }
-          else if (vals.length == 1) {
-            return Drupal.t('All except @selected', {'@selected': vals.shift()});
+          else if (values.length == 1) {
+            return Drupal.t('All except @selected', {'@selected': values.shift()});
           }
           else {
-            return Drupal.t('All except @selected and @remaining more...', {'@selected': vals.shift(), '@remaining': vals.length});
+            return Drupal.t('All except @selected and @remaining more...', {'@selected': values.shift(), '@remaining': values.length});
           }
         }
       }
-      else if (val == 'none') {
+      else if (value == 'none') {
         return Drupal.t('Incompatible with all');
       }
     });
@@ -97,12 +97,12 @@
     $('fieldset#edit-commerce-discount-fields-additional-settings-commerce-discount-usage', context).drupalSetSummary(function(context) {
       var usagePerPerson = $('input[name="commerce_discount_fields[discount_usage_per_person][und][0][value]"]').val(),
           overallUsage = $('input[name="commerce_discount_fields[discount_usage_limit][und][0][value]"]').val(),
-          vals = [];
+          values = [];
 
-      vals.push(Drupal.t('!usagePerPerson per person', {'!usagePerPerson': usagePerPerson > 0 ? Drupal.checkPlain(usagePerPerson) : '&#8734;'}));
-      vals.push(Drupal.t('!overallUsage total', {'!overallUsage': overallUsage > 0 ? Drupal.checkPlain(overallUsage) : '&#8734;'}));
+      values.push(Drupal.t('!usagePerPerson per person', {'!usagePerPerson': usagePerPerson > 0 ? Drupal.checkPlain(usagePerPerson) : '&#8734;'}));
+      values.push(Drupal.t('!overallUsage total', {'!overallUsage': overallUsage > 0 ? Drupal.checkPlain(overallUsage) : '&#8734;'}));
 
-      return vals.join(', ');
+      return values.join(', ');
     });
   };
 }(jQuery, Drupal));

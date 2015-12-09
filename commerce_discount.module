@@ -997,7 +997,7 @@ function commerce_discount_usage_record_order_usage($order) {
     $record = array(
       'discount' => $discount_name,
       'mail' => $order->mail ? $order->mail : '',
-      'order_id' => $order->order_id
+      'order_id' => $order->order_id,
     );
     drupal_write_record('commerce_discount_usage', $record);
   }

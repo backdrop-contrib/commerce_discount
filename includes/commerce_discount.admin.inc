@@ -6,12 +6,12 @@
  */
 
 /**
- * UI controller.
+ * Class CommerceDiscountUIController.
  */
 class CommerceDiscountUIController extends EntityDefaultUIController {
 
   /**
-   * Overridden to customize the field location.
+   * {@inheritdoc}
    */
   public function entityFormSubmitBuildEntity($form, &$form_state) {
     // We cannot use entity_form_submit_build_entity() any more.
@@ -19,6 +19,7 @@ class CommerceDiscountUIController extends EntityDefaultUIController {
 
     // Extract form values.
     form_state_values_clean($form_state);
+
     foreach ($form_state['values'] as $key => $value) {
       if ($key != 'commerce_discount_fields') {
         $entity->{$key} = $value;
@@ -29,14 +30,15 @@ class CommerceDiscountUIController extends EntityDefaultUIController {
         $entity->commerce_discount_offer['commerce_discount_fields'] = $discount_offer;
       }
     }
-    // Invoke all specified builders for copying form values to entity
-    // properties.
+
+    // Invoke all specified builders for copying values to entity properties.
     // @see entity_form_submit_build_entity()
     if (isset($form['#entity_builders'])) {
       foreach ($form['#entity_builders'] as $function) {
         $function('commerce_discount', $entity, $form, $form_state);
       }
     }
+
     field_attach_submit('commerce_discount', $entity, $form['commerce_discount_fields'], $form_state);
 
     return $entity;

@@ -133,25 +133,23 @@ function commerce_discount_schema() {
     'foreign keys' => array(
       'discount' => array(
         'table' => 'commerce_discount',
-        'column' => array('discount' => 'name')
+        'column' => array('discount' => 'name'),
       ),
       'order_id' => array(
         'table' => 'commerce_order',
-        'column' => array('order_id' => 'order_id')
+        'column' => array('order_id' => 'order_id'),
       ),
       'mail' => array(
         'table' => 'users',
-        'column' => array('mail' => 'mail')
-      )
+        'column' => array('mail' => 'mail'),
+      ),
     ),
     'indexes' => array(
       'mail' => array('mail'),
       'discount' => array('discount'),
-      'order_id' => array('order_id')
-    )
+      'order_id' => array('order_id'),
+    ),
   );
-
-
 
   return $schema;
 }
@@ -580,7 +578,7 @@ function commerce_discount_install_helper() {
         ),
         'settings' => array(
           'min' => 0,
-        )
+        ),
       );
       field_create_instance($instance);
     }
@@ -596,8 +594,8 @@ function commerce_discount_install_helper() {
           'weight' => 100,
         ),
         'settings' => array(
-          'min' => 0
-        )
+          'min' => 0,
+        ),
       );
       field_create_instance($instance);
     }
@@ -786,7 +784,7 @@ function commerce_discount_update_7101() {
 /**
  * Discount component price names.
  *
- * @see https://drupal.org/node/2034685
+ * @link https://drupal.org/node/2034685
  *
  * Add a new column in commerce_discount table in order to display customized
  * component price title for a discount.
@@ -1065,16 +1063,16 @@ function commerce_discount_update_7109() {
     foreach ($result as $record) {
       // We got results, perform the updates.
       db_update('field_data_commerce_percentage')
-        ->fields(array(
-          'commerce_percentage_value' => abs($record->commerce_percentage_value * 100)
-        ))
+        ->fields(array('commerce_percentage_value' => abs($record->commerce_percentage_value * 100)))
         ->condition('entity_id', $record->entity_id, '=')
         ->execute();
     }
   }
 
   $text = t('Update 7109 finished. Please check all your percentage based discount settings for correct values after this update!');
-  $text .= t('Number of percentage values in table "field_data_commerce_percentage" who were updated as a result: ' . $result->rowCount());
+  $text .= t('Number of percentage values in table "field_data_commerce_percentage" who were updated as a result: @count', array(
+    '@count' => $result->rowCount(),
+  ));
 
   return $text;
 }

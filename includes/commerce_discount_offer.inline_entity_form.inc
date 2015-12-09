@@ -11,7 +11,7 @@
 class CommerceDiscountOfferInlineEntityFormController extends EntityInlineEntityFormController {
 
   /**
-   * Overrides EntityInlineEntityFormController::entityForm().
+   * {@inheritdoc}
    */
   public function entityForm($entity_form, &$form_state) {
     // If we're cloning, we want to clone the offer entity too.
