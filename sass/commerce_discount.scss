@@ -114,43 +114,32 @@
   // Help with floaties inside.
   @include clearfix;
 
-  border: none;
+  border: 0;
   margin: 0;
   padding: 0;
 
-  .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type {
-    label {
-      border-bottom: 1px solid $gray2;
+  // Offer type options.
+  .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type.form-type-radios {
+    padding-left: 0;
+    padding-right: 0;
+    [dir="ltr"] & {
+      float: left;
+      margin-right: 20px;
+      padding-right: 20px;
+      border-right: 1px dotted $gray2;
+    }
 
-      [dir="ltr"] & {
-        padding-left: 5px;
-      }
-
-      [dir="rtl"] & {
-        padding-right: 5px;
-      }
+    [dir="rtl"] & {
+      float: right;
+      margin-left: 20px;
+      padding-left: 20px;
+      border-left: 1px dotted $gray2;
     }
 
     .form-radios {
       @include radio-buttons;
-
-      background-color: transparent;
       margin: 10px;
-      padding: 4px 0;
-
-      [dir="ltr"] & {
-        float: left;
-        margin-right: 20px;
-        padding-right: 20px;
-        border-right: 1px dotted $gray2;
-      }
-
-      [dir="rtl"] & {
-        float: right;
-        margin-left: 20px;
-        padding-left: 20px;
-        border-left: 1px dotted $gray2;
-      }
+      padding: 0;
 
       .form-item {
         &.selected {
@@ -176,19 +165,20 @@
     }
   }
 
-  // The two columns for the offer type.
-  .ief-form > .fieldset-wrapper {
+  // Avoid collision with fields below.
+  .commerce-offer-type-wrapper > .fieldset-wrapper {
     @include clearfix;
+  }
 
-    & > .form-type-radios,
-    & > .commerce-offer-fields-wrapper {
-      [dir="ltr"] & {
-        float: left;
-      }
+  // The two columns for the offer type.
+  .commerce-offer-fields-wrapper {
+    padding: 0;
+    [dir="ltr"] & {
+      float: left;
+    }
 
-      [dir="rtl"] & {
-        float: right;
-      }
+    [dir="rtl"] & {
+      float: right;
     }
   }
 
@@ -351,8 +341,8 @@
     }
 
     .form-disabled input {
-      border: none;
-      background: none;
+      border: 0;
+      background-color: transparent;
     }
   }
 }
@@ -362,17 +352,14 @@
  */
 .view-commerce-discount-overview {
   .views-table {
-    border: none;
+    border: 0;
 
     tr, td {
-      border: none;
+      border: 0;
     }
 
     th {
       text-transform: none;
-
-      .views-field-enable-disable {}
-
       .views-field-operations-dropbutton {
         width: 70px;
       }
