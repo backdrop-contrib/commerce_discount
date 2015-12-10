@@ -61,6 +61,7 @@ class CommerceDiscountOfferInlineEntityFormController extends EntityInlineEntity
         'class' => array('commerce-offer-fields-wrapper'),
       ),
       '#weight' => 2,
+      '#parents' => array('commerce_discount_fields', 'commerce_discount_offer', LANGUAGE_NONE, 'form'),
     );
 
     // Transfer field elements onto fields container.
@@ -94,17 +95,4 @@ class CommerceDiscountOfferInlineEntityFormController extends EntityInlineEntity
     return $entity_form;
   }
 
-  /**
-   * {@inheritdoc}
-   */
-  public function entityFormValidate($entity_form, &$form_state) {
-    // Move field values back down off the container for the proper IEF values.
-    if (!empty($form_state['values']['commerce_discount_fields']['commerce_discount_offer'][LANGUAGE_NONE]['form']['commerce_discount_offer_fields'])) {
-      $form = &$form_state['values']['commerce_discount_fields']['commerce_discount_offer'][LANGUAGE_NONE]['form'];
-      $field_values = $form['commerce_discount_offer_fields'];
-      unset($form['commerce_discount_offer_fields']);
-      $form = array_merge($form, $field_values);
-    }
-    parent::entityFormValidate($entity_form, $form_state);
-  }
 }
