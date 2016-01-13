@@ -50,7 +50,7 @@ function commerce_discount_commerce_cart_order_refresh($wrapper) {
 
       // Only check non-new line items; new ones have already been saved.
       if (isset($cloned_line_items[$id])) {
-        $unit_price = $wrapper_line_item->commerce_unit_price->value();
+        $unit_price = commerce_price_wrapper_value($wrapper_line_item, 'commerce_unit_price', TRUE);
         if ($wrapper_line_item->getBundle() == 'commerce_discount' && empty($unit_price['amount'])) {
           $line_items_to_delete[] = $id;
           $wrapper->commerce_line_items->offsetUnset($delta);
@@ -60,13 +60,11 @@ function commerce_discount_commerce_cart_order_refresh($wrapper) {
           // commerce_cart_order_refresh() does) and quantity.
           // (Don't check e.g. commerce_total; it may not be updated yet.)
           $old_line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $cloned_line_items[$id]);
-          $old_unit_price = $old_line_item_wrapper->commerce_unit_price->value();
-          $old_data = (array) $old_unit_price['data'] + array('components' => array());
-          $data = (array) $unit_price['data'] + array('components' => array());
+          $old_unit_price = commerce_price_wrapper_value($old_line_item_wrapper, 'commerce_unit_price', TRUE);
 
           if ($unit_price['amount'] != $old_unit_price['amount'] ||
             $unit_price['currency_code'] != $old_unit_price['currency_code'] ||
-            $data['components'] != $old_data['components']) {
+            $unit_price['data']['components'] != $old_unit_price['data']['components']) {
             // Save changed line item (which will correctly set commerce_total).
             $wrapper_line_item->save();
           }
@@ -697,7 +695,7 @@ function commerce_discount_offer_type_get_name($type = NULL) {
 }
 
 /**
- * Return an array keyed by commerce order type and label as value.
+ * Return an array keyed by commerce discount name and label as value.
  */
 function commerce_discount_entity_list() {
   $options = array();
@@ -949,13 +947,12 @@ function commerce_discount_usage_order_discounts($order) {
 
   foreach ($order_wrapper->commerce_line_items as $line_item_wrapper) {
     // If the current line item actually no longer exists, continue.
-    if (!$line_item_wrapper->value() || !isset($line_item_wrapper->commerce_unit_price)) {
+    if (!isset($line_item_wrapper->commerce_unit_price)) {
       continue;
     }
 
-    $data = $line_item_wrapper->commerce_unit_price->data->value();
-
-    foreach ($data['components'] as $key => $component) {
+    $unit_price = commerce_price_wrapper_value($line_item_wrapper, 'commerce_unit_price', TRUE);
+    foreach ($unit_price['data']['components'] as $key => $component) {
       if (strpos($component['name'], 'discount|') === 0 && !empty($component['price']['data']['discount_name'])) {
         $order_discount_name = $component['price']['data']['discount_name'];
         $order_discount_wrapper = entity_metadata_wrapper('commerce_discount', $order_discount_name);

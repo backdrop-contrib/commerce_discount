@@ -878,9 +878,8 @@ function commerce_discount_fixed_amount(EntityDrupalWrapper $wrapper, $discount_
 
     case 'commerce_line_item':
       // Check whether this discount was already added as a price component.
-      $price_data = $wrapper->commerce_unit_price->data->value();
-
-      foreach ($price_data['components'] as $component) {
+      $unit_price = commerce_price_wrapper_value($wrapper, 'commerce_unit_price', TRUE);
+      foreach ($unit_price['data']['components'] as $component) {
         if (!empty($component['price']['data']['discount_name']) && $component['price']['data']['discount_name'] == $discount_wrapper->getIdentifier()) {
           return;
         }
@@ -955,18 +954,15 @@ function commerce_discount_percentage(EntityDrupalWrapper $wrapper, $discount_na
       }
 
       // Check whether this discount was already added as a price component.
-      $price_data = $wrapper->commerce_unit_price->data->value();
-      foreach ($price_data['components'] as $component) {
+      $unit_price = commerce_price_wrapper_value($wrapper, 'commerce_unit_price', TRUE);
+      foreach ($unit_price['data']['components'] as $component) {
         if (!empty($component['price']['data']['discount_name']) && $component['price']['data']['discount_name'] == $discount_name) {
           return;
         }
       }
 
-      $unit_price = commerce_price_wrapper_value($wrapper, 'commerce_unit_price', TRUE);
-      $calculated_discount = $unit_price['amount'] * $rate * -1;
-
       $discount_amount = array(
-        'amount' => $calculated_discount,
+        'amount' => $unit_price['amount'] * $rate * -1,
         'currency_code' => $unit_price['currency_code'],
       );
       commerce_discount_add_price_component($wrapper, $discount_name, $discount_amount);
@@ -1414,9 +1410,9 @@ function commerce_discount_add_price_component(EntityDrupalWrapper $line_item_wr
   // Set the new unit price.
   $line_item_wrapper->commerce_unit_price->amount = $updated_amount;
   // Add the discount amount as a price component.
-  $price = $line_item_wrapper->commerce_unit_price->value();
+  $unit_price = commerce_price_wrapper_value($line_item_wrapper, 'commerce_unit_price', TRUE);
   $type = empty($component_title) ? 'discount' : check_plain('discount|' . $discount_name);
-  $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add($price, $type, $difference, TRUE, TRUE);
+  $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add($unit_price, $type, $difference, TRUE, TRUE);
 
   // Update the line item total.
   _commerce_discount_update_commerce_total($line_item_wrapper);
@@ -1450,9 +1446,9 @@ function commerce_discount_set_price_component(EntityDrupalWrapper $line_item_wr
   $line_item_wrapper->commerce_unit_price->amount = $discount_amount['amount'];
 
   // Add the discount amount as a price component.
-  $price = $line_item_wrapper->commerce_unit_price->value();
+  $unit_price = commerce_price_wrapper_value($line_item_wrapper, 'commerce_unit_price', TRUE);
   $type = empty($component_title) ? 'discount' : check_plain('discount|' . $discount_name);
-  $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add($price, $type, $discount_amount, TRUE, TRUE);
+  $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add($unit_price, $type, $discount_amount, TRUE, TRUE);
 
   // Update the line item total.
   _commerce_discount_update_commerce_total($line_item_wrapper);
