@@ -164,7 +164,12 @@ function commerce_discount_rules_condition_info() {
           'label' => t('Operator'),
           'description' => t('The operator used with the SKUs below.'),
           'default value' => 'all',
-          'options list' => '_commerce_discount_order_contains_products_options'
+          'options list' => array(
+            'any' => t('any products'),
+            'all' => t('all products'),
+            'exactly' => t('exclusively all products'),
+            'only' => t('exclusively any products'),
+          ),
         ),
         'products' => array(
           'type' => 'text',
@@ -1523,18 +1528,6 @@ function _commerce_discount_operator_options() {
     '==' => t('equals'),
     '>' => t('greater than'),
     '>=' => t('greater than or equal to'),
-  );
-}
-
-/**
- * Options list callback for type of contains products.
- */
-function _commerce_discount_order_contains_products_options() {
-  return array(
-    'any' => t('any products'),
-    'all' => t('all products'),
-    'exactly' => t('exclusively all products'),
-    'only' => t('exclusively any products'),
   );
 }
 
