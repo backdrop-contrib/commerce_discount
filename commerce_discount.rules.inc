@@ -122,7 +122,7 @@ function commerce_discount_rules_condition_info() {
         ),
       ),
       'module' => 'commerce_discount',
-      'group' => t('Commerce Order'),
+      'group' => t('Commerce Discount'),
       'callbacks' => array(
         'execute' => $inline_conditions['commerce_order_compare_order_amount']['callbacks']['build'],
       ),
@@ -144,7 +144,7 @@ function commerce_discount_rules_condition_info() {
         ),
       ),
       'module' => 'commerce_discount',
-      'group' => t('Commerce Order'),
+      'group' => t('Commerce Discount'),
       'callbacks' => array(
         'execute' => $inline_conditions['commerce_order_has_owner']['callbacks']['build'],
       ),
@@ -174,7 +174,7 @@ function commerce_discount_rules_condition_info() {
         ),
       ),
       'module' => 'commerce_discount',
-      'group' => t('Commerce Order'),
+      'group' => t('Commerce Discount'),
       'callbacks' => array(
         'execute' => $inline_conditions['commerce_order_contains_products']['callbacks']['build'],
       ),
@@ -208,7 +208,7 @@ function commerce_discount_rules_condition_info() {
         ),
       ),
       'module' => 'commerce_discount',
-      'group' => t('Commerce Order'),
+      'group' => t('Commerce Discount'),
       'callbacks' => array(
         'execute' => $inline_conditions['commerce_order_has_specific_quantity_products']['callbacks']['build'],
       ),
@@ -232,7 +232,7 @@ function commerce_discount_rules_condition_info() {
         ),
       ),
       'module' => 'commerce_discount',
-      'group' => t('Commerce Line Item'),
+      'group' => t('Commerce Discount'),
       'callbacks' => array(
         'execute' => $inline_conditions['commerce_product_contains_products']['callbacks']['build'],
       ),
@@ -254,7 +254,7 @@ function commerce_discount_rules_condition_info() {
         ),
       ),
       'module' => 'commerce_discount',
-      'group' => t('Commerce Line Item'),
+      'group' => t('Commerce Discount'),
       'callbacks' => array(
         'execute' => $inline_conditions['commerce_product_has_type']['callbacks']['build'],
       ),
@@ -278,7 +278,7 @@ function commerce_discount_rules_condition_info() {
         ),
       ),
       'module' => 'commerce_discount',
-      'group' => t('Commerce Line Item'),
+      'group' => t('Commerce Discount'),
       'callbacks' => array(
         'execute' => $inline_conditions['commerce_product_has_specified_terms']['callbacks']['build'],
       ),
@@ -297,7 +297,7 @@ function commerce_discount_rules_condition_info() {
         'label' => t('Line item'),
       ),
     ),
-    'group' => t('Commerce Line Item'),
+    'group' => t('Commerce Discount'),
   );
 
   return $conditions;
