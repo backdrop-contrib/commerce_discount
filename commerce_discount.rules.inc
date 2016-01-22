@@ -159,22 +159,18 @@ function commerce_discount_rules_condition_info() {
           'description' => t('The order.'),
           'wrapped' => TRUE,
         ),
-        'operator' => array(
-          'type' => 'text',
-          'label' => t('Operator'),
-          'description' => t('The operator used with the SKUs below.'),
-          'default value' => 'all',
-          'options list' => array(
-            'any' => t('any products'),
-            'all' => t('all products'),
-            'exactly' => t('exclusively all products'),
-            'only' => t('exclusively any products'),
-          ),
-        ),
         'products' => array(
           'type' => 'text',
           'label' => t('Product SKU(s)'),
           'description' => t('Products SKU to look for on the order. Enter a comma-separated list of product SKU(s).'),
+        ),
+        'operator' => array(
+          'type' => 'text',
+          'label' => t('Operator'),
+          'description' => t('The comparison type used with the SKUs above.'),
+          'default value' => 'any',
+          'options list' => '_commerce_discount_rules_product_match_options',
+          'optional' => TRUE,
         ),
       ),
       'module' => 'commerce_discount',
@@ -621,11 +617,13 @@ function commerce_order_has_owner_build(EntityDrupalWrapper $wrapper, $account) 
  *   The wrapped entity given by the rule.
  * @param string $products
  *   A list of products SKU.
+ * @param string $operator
+ *   An optional operator for comparison. The default is 'any'.
  *
  * @return bool
  *   Returns True if condition is valid. False otherwise.
  */
-function commerce_order_contains_products_build(EntityDrupalWrapper $wrapper, $operator, $products) {
+function commerce_order_contains_products_build(EntityDrupalWrapper $wrapper, $products, $operator = 'any') {
   // Split by comma. Allow some grace for spaces.
   $products_sku = explode(', ', (string) $products);
   $order_skus = array();
@@ -1416,6 +1414,20 @@ function commerce_discount_add_price_component(EntityDrupalWrapper $line_item_wr
 
   // Update the line item total.
   _commerce_discount_update_commerce_total($line_item_wrapper);
+}
+
+/**
+ * Rules options list callback for product match options.
+ *
+ * @return array
+ */
+function _commerce_discount_rules_product_match_options() {
+  return array(
+    'any' => t('any products'),
+    'all' => t('all products'),
+    'exactly' => t('exclusively all products'),
+    'only' => t('exclusively any products'),
+  );
 }
 
 /**
