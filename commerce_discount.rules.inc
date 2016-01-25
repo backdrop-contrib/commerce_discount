@@ -1339,16 +1339,11 @@ function commerce_discount_free_products(EntityDrupalWrapper $wrapper, $discount
  */
 function commerce_discount_add_line_item(EntityDrupalWrapper $order_wrapper, $discount_name, $discount_amount, $data = array()) {
   // Create a new line item.
-  $values = array(
-    'type' => 'commerce_discount',
-    'order_id' => $order_wrapper->order_id->value(),
-    'quantity' => 1,
-    // Flag the line item.
-    'data' => array('discount_name' => $discount_name) + $data,
-  );
-  $discount_line_item = entity_create('commerce_line_item', $values);
-  $discount_line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $discount_line_item);
-
+  $discount_line_item = commerce_line_item_new('commerce_discount', $order_wrapper->getIdentifier());
+  $discount_line_item->data = array('discount_name' => $discount_name) + $data;
+  // Setting the bundle to ensure the entity metadata stores it correctly.
+  $info = array('bundle' => 'commerce_discount');
+  $discount_line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $discount_line_item, $info);
   // Initialize the line item unit price.
   $discount_line_item_wrapper->commerce_unit_price->amount = 0;
   $discount_line_item_wrapper->commerce_unit_price->currency_code = $discount_amount['currency_code'];
@@ -1365,9 +1360,10 @@ function commerce_discount_add_line_item(EntityDrupalWrapper $order_wrapper, $di
   // Add the discount price component.
   commerce_discount_add_price_component($discount_line_item_wrapper, $discount_name, $discount_amount);
 
-  // Save the line item and add it to the order.
-  $discount_line_item_wrapper->save();
-  $order_wrapper->commerce_line_items[] = $discount_line_item_wrapper;
+  // Save the incoming line item now so we get its ID.
+  commerce_line_item_save($discount_line_item);
+  // Add it to the order's line item reference value.
+  $order_wrapper->commerce_line_items[] = $discount_line_item;
 }
 
 /**
@@ -1407,6 +1403,7 @@ function commerce_discount_add_price_component(EntityDrupalWrapper $line_item_wr
 
   // Set the new unit price.
   $line_item_wrapper->commerce_unit_price->amount = $updated_amount;
+
   // Add the discount amount as a price component.
   $unit_price = commerce_price_wrapper_value($line_item_wrapper, 'commerce_unit_price', TRUE);
   $type = empty($component_title) ? 'discount' : check_plain('discount|' . $discount_name);

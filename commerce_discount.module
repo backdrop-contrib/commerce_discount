@@ -31,8 +31,8 @@ function commerce_discount_commerce_cart_order_refresh($wrapper) {
       $line_items_to_delete[] = $wrapper_line_item->line_item_id->value();
       $wrapper->commerce_line_items->offsetUnset($delta);
     }
-    elseif (is_object($wrapper_line_item) && $line_item = $wrapper_line_item->value()) {
-      $cloned_line_items[$wrapper_line_item->getIdentifier()] = clone $line_item;
+    elseif ($line_item = $wrapper_line_item->value()) {
+      $cloned_line_items[$line_item->line_item_id] = clone $line_item;
 
       // Remove discount components from the line item price fields; the line
       // item may be a discount (so the price will become 0) or another line
@@ -968,7 +968,9 @@ function commerce_discount_usage_order_discounts($order) {
   // Add the set of discounts directly referenced on the order.
   if (isset($order->commerce_discounts) && $order_wrapper->commerce_discounts->value()) {
     foreach ($order_wrapper->commerce_discounts->value() as $discount) {
-      $order_discounts[] = $discount->name;
+      if (isset($discount->name)) {
+        $order_discounts[] = $discount->name;
+      }
     }
   }
 
