@@ -12,24 +12,26 @@
  * Implements hook_commerce_cart_order_refresh().
  *
  * Remove any existing commerce discount line item.
+ *
+ * @param \EntityDrupalWrapper $order_wrapper
  */
-function commerce_discount_commerce_cart_order_refresh($wrapper) {
+function commerce_discount_commerce_cart_order_refresh(EntityDrupalWrapper $order_wrapper) {
   $line_items_to_delete = array();
   $cloned_line_items = array();
   // Remove all discount references from the order.
   // (If there are none, setting array() would modify the order, so test first.)
-  if (isset($wrapper->commerce_discounts) && $wrapper->commerce_discounts->value()) {
-    $wrapper->commerce_discounts = array();
+  if (isset($order_wrapper->commerce_discounts) && $order_wrapper->commerce_discounts->value()) {
+    $order_wrapper->commerce_discounts = array();
   }
 
   // Remove discount components from the order total price.
-  commerce_discount_remove_discount_components($wrapper->commerce_order_total);
+  commerce_discount_remove_discount_components($order_wrapper->commerce_order_total);
 
-  foreach ($wrapper->commerce_line_items as $delta => $wrapper_line_item) {
+  foreach ($order_wrapper->commerce_line_items as $delta => $wrapper_line_item) {
     if ($wrapper_line_item->getBundle() == 'product_discount') {
       // Delete the line item, and remove it from the order.
       $line_items_to_delete[] = $wrapper_line_item->line_item_id->value();
-      $wrapper->commerce_line_items->offsetUnset($delta);
+      $order_wrapper->commerce_line_items->offsetUnset($delta);
     }
     elseif ($line_item = $wrapper_line_item->value()) {
       $cloned_line_items[$line_item->line_item_id] = clone $line_item;
@@ -44,7 +46,7 @@ function commerce_discount_commerce_cart_order_refresh($wrapper) {
 
   // Save the line items which have changes after removing/re-adding discounts;
   // except if one of our discount type line items still has price 0, delete it.
-  foreach ($wrapper->commerce_line_items as $delta => $wrapper_line_item) {
+  foreach ($order_wrapper->commerce_line_items as $delta => $wrapper_line_item) {
     if ($wrapper_line_item->getBundle() != 'product_discount') {
       $id = $wrapper_line_item->getIdentifier();
 
@@ -53,7 +55,7 @@ function commerce_discount_commerce_cart_order_refresh($wrapper) {
         $unit_price = commerce_price_wrapper_value($wrapper_line_item, 'commerce_unit_price', TRUE);
         if ($wrapper_line_item->getBundle() == 'commerce_discount' && empty($unit_price['amount'])) {
           $line_items_to_delete[] = $id;
-          $wrapper->commerce_line_items->offsetUnset($delta);
+          $order_wrapper->commerce_line_items->offsetUnset($delta);
         }
         else {
           // Check for changes, in commerce_unit_price (in the same way as
@@ -77,7 +79,7 @@ function commerce_discount_commerce_cart_order_refresh($wrapper) {
   commerce_line_item_delete_multiple($line_items_to_delete);
 
   // Re-add all applicable discount price components and/or line items.
-  rules_invoke_event('commerce_discount_order', $wrapper);
+  rules_invoke_event('commerce_discount_order', $order_wrapper);
 }
 
 /**
