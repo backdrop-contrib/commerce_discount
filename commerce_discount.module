@@ -948,12 +948,20 @@ function commerce_discount_usage_order_discounts($order) {
   $order_discounts = array();
 
   foreach ($order_wrapper->commerce_line_items as $line_item_wrapper) {
-    // If the current line item actually no longer exists, continue.
-    if (!isset($line_item_wrapper->commerce_unit_price)) {
+    try {
+      $unit_price = commerce_price_wrapper_value($line_item_wrapper, 'commerce_unit_price', TRUE);
+    }
+    catch (Exception $ex) {
+      // Log and continue if we're unable to load the unit price.
+      // @TODO Resolve how to prevent commerce_cart_order_refresh() from firing
+      // inside an order save via entity_load_unchanged().
+      // @see https://www.drupal.org/node/2661530
+      $backtrace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS);
+      $watchdog_variables = array('@backtrace' => json_encode($backtrace, JSON_PRETTY_PRINT));
+      watchdog('commerce_discount', 'Discount usage line item is missing. Backtrace: <pre>@backtrace</pre>', $watchdog_variables, WATCHDOG_DEBUG);
       continue;
     }
 
-    $unit_price = commerce_price_wrapper_value($line_item_wrapper, 'commerce_unit_price', TRUE);
     foreach ($unit_price['data']['components'] as $key => $component) {
       if (strpos($component['name'], 'discount|') === 0 && !empty($component['price']['data']['discount_name'])) {
         $order_discount_name = $component['price']['data']['discount_name'];
