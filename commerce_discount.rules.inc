@@ -556,7 +556,7 @@ function commerce_order_compare_order_amount_build(EntityDrupalWrapper $wrapper,
 
   // Get given total order amount.
   foreach ($wrapper->commerce_line_items as $line_item_wrapper) {
-    if (in_array($line_item_wrapper->getBundle(), $line_item_types)) {
+    if (in_array($line_item_wrapper->getBundle(), $line_item_types, TRUE)) {
       // Convert the line item's total to the order's currency for totalling.
       $component_total = commerce_price_component_total($line_item_wrapper->commerce_total->value());
 
@@ -902,6 +902,8 @@ function commerce_discount_percentage(EntityDrupalWrapper $wrapper, $discount_na
   $rate = $discount_wrapper->commerce_discount_offer->commerce_percentage->value() / 100;
   // Get the line item types to apply the discount to.
   $line_item_types = variable_get('commerce_discount_line_item_types', array_diff(commerce_product_line_item_types(), array('product_discount')));
+  // Filter out 0 values in the variable.
+  $line_item_types = array_filter($line_item_types);
 
   switch ($wrapper->type()) {
     case 'commerce_order':
@@ -921,7 +923,10 @@ function commerce_discount_percentage(EntityDrupalWrapper $wrapper, $discount_na
       $calculated_discount = 0;
       // Loop the line items of the order and calculate the total discount.
       foreach ($wrapper->commerce_line_items as $line_item_wrapper) {
-        if (in_array($line_item_wrapper->type->value(), $line_item_types)) {
+        // Check if the line item is configured in the discount settings to
+        // apply the discount.
+        $line_item_type = $line_item_wrapper->getBundle();
+        if (in_array($line_item_type, $line_item_types, TRUE)) {
           $line_item_total = commerce_price_wrapper_value($line_item_wrapper, 'commerce_total', TRUE);
           $calculated_discount += $line_item_total['amount'] * $rate;
         }
@@ -945,9 +950,10 @@ function commerce_discount_percentage(EntityDrupalWrapper $wrapper, $discount_na
       break;
 
     case 'commerce_line_item':
-      // Check if the line item is configured in the settings to apply the
-      // discount.
-      if (!in_array($wrapper->getBundle(), $line_item_types)) {
+      // Check if the line item is configured in the discount settings to apply
+      // the discount.
+      $line_item_type = $wrapper->getBundle();
+      if (!in_array($line_item_type, $line_item_types, TRUE)) {
         return;
       }
 
