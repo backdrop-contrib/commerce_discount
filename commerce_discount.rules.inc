@@ -1108,6 +1108,12 @@ function commerce_discount_percent_off_shipping_service($order, $discount_name) 
 
   // Determine whether to affect a singular service, or all services.
   if (isset($shipping_service_to_discount)) {
+    // Check if the order contains the shipping rate we want to apply a discount
+    // against. Not all shipping rates apply to all orders.
+    if (!isset($order->shipping_rates[$shipping_service_to_discount])) {
+      return;
+    }
+
     // Add singular shipping service to $conf global array.
     $order->shipping_rates[$shipping_service_to_discount]->data['shipping_service']['description'] .= ' <span class="shipping-discount-text">' . $discount_label . '</span>';
 
@@ -1119,7 +1125,7 @@ function commerce_discount_percent_off_shipping_service($order, $discount_name) 
 
     // The following applies the shipping discount to the line item.
     $shipping_line_item_wrapper->commerce_unit_price->amount = $discounted_shipping_value;
-    $shipping_service = commerce_shipping_service_load($discount_name);
+    $shipping_service = commerce_shipping_service_load($shipping_service_to_discount);
 
     // Updating the data component. Effectively updates line item price!
     $shipping_line_item_wrapper->commerce_unit_price->data = array();
@@ -1145,7 +1151,7 @@ function commerce_discount_percent_off_shipping_service($order, $discount_name) 
       // The following applies the shipping discount to the line item.
       $shipping_line_item_wrapper->commerce_unit_price->amount = $discounted_shipping_value;
 
-      $shipping_service = commerce_shipping_service_load($discount_name);
+      $shipping_service = commerce_shipping_service_load($shipping_service_to_discount);
 
       // Updating the data component. Effectively updates line item price!
       $shipping_line_item_wrapper->commerce_unit_price->data = array();
