@@ -367,7 +367,7 @@ function commerce_discount_field_widget_form_alter(&$element, &$form_state, $con
  * Rebuild Rules configuration.
  */
 function commerce_discount_commerce_discount_insert($entity) {
-  entity_defaults_rebuild(array('rules_config'));
+  _commerce_discount_rebuild_rules_config($entity);
 }
 
 /**
@@ -376,7 +376,125 @@ function commerce_discount_commerce_discount_insert($entity) {
  * Rebuild Rules configuration.
  */
 function commerce_discount_commerce_discount_update($entity) {
-  entity_defaults_rebuild(array('rules_config'));
+  _commerce_discount_rebuild_rules_config($entity);
+}
+
+/**
+ * Actually rebuild the defaults of a given entity.
+ *
+ * @see entity_defaults_rebuild().
+ *
+ * @param CommerceDiscount $discount
+ *   Fully loaded Commerce Discount entity to rebuild rules_config for.
+ */
+function _commerce_discount_rebuild_rules_config(CommerceDiscount $discount) {
+  // Return early if we can't aquire a lock on the rules config.
+  if (!lock_acquire('entity_rebuild_rules_config')) {
+    return;
+  }
+
+  $existing_rules_config = FALSE;
+  $rules_config_name = 'commerce_discount_rule_' . $discount->name;
+
+  $info = entity_get_info('rules_config');
+  $hook = isset($info['export']['default hook']) ? $info['export']['default hook'] : 'default_rules_config';
+  $keys = $info['entity keys'] + array(
+    'module' => 'module',
+    'status' => 'status',
+    'name' => $info['entity keys']['id'],
+  );
+
+  // Check for the existence of the module and status columns.
+  if (!in_array($keys['status'], $info['schema_fields_sql']['base table']) || !in_array($keys['module'], $info['schema_fields_sql']['base table'])) {
+    trigger_error("Missing database columns for the exportable entity 'rules_config' as defined by entity_exportable_schema_fields(). Update the according module and run update.php!", E_USER_WARNING);
+    return;
+  }
+
+  // Invoke the hook and collect default entities.
+  $entities = array();
+  foreach (module_implements($hook) as $module) {
+    /** @var RulesReactionRule $entity */
+    foreach ((array) module_invoke($module, $hook) as $name => $entity) {
+      if ($name == $rules_config_name) {
+        $entity->{$keys['name']} = $name;
+        $entity->{$keys['module']} = $module;
+        $entities[$name] = $entity;
+        $existing_rules_config = TRUE;
+      }
+    }
+  }
+  drupal_alter($hook, $entities);
+
+  // Check for defaults that disappeared or overridden?
+  if (!$existing_rules_config) {
+    $existing_defaults = entity_load_multiple_by_name('rules_config', FALSE, array($keys['status'] => array(ENTITY_OVERRIDDEN, ENTITY_IN_CODE, ENTITY_FIXED)));
+
+    foreach ($existing_defaults as $name => $entity) {
+      if (empty($entities[$name]) && $name == $rules_config_name) {
+        $entity->is_rebuild = TRUE;
+        if (entity_has_status('rules_config', $entity, ENTITY_OVERRIDDEN)) {
+          $entity->{$keys['status']} = ENTITY_CUSTOM;
+          entity_save('rules_config', $entity);
+        }
+        else {
+          entity_delete('rules_config', $name);
+        }
+        unset($entity->is_rebuild);
+      }
+    }
+  }
+
+  // Load all existing entities.
+  $existing_entities = entity_load_multiple_by_name('rules_config', array_keys($entities));
+
+  foreach ($existing_entities as $name => $entity) {
+    if (entity_has_status('rules_config', $entity, ENTITY_CUSTOM)) {
+      // If the entity already exists but is not yet marked as overridden, we
+      // have to update the status.
+      if (!entity_has_status('rules_config', $entity, ENTITY_OVERRIDDEN)) {
+        $entity->{$keys['status']} |= ENTITY_OVERRIDDEN;
+        $entity->{$keys['module']} = $entities[$name]->{$keys['module']};
+        $entity->is_rebuild = TRUE;
+        entity_save('rules_config', $entity);
+        unset($entity->is_rebuild);
+      }
+
+      // The entity is overridden, so we do not need to save the default.
+      unset($entities[$name]);
+    }
+  }
+
+  // Save defaults.
+  $originals = array();
+  foreach ($entities as $name => $entity) {
+    if (!empty($existing_entities[$name])) {
+      // Make sure we are updating the existing default.
+      $entity->{$keys['id']} = $existing_entities[$name]->{$keys['id']};
+      unset($entity->is_new);
+    }
+    // Pre-populate $entity->original as we already have it. So we avoid
+    // loading it again.
+    $entity->original = !empty($existing_entities[$name]) ? $existing_entities[$name] : FALSE;
+    // Keep original entities for hook_{entity_type}_defaults_rebuild()
+    // implementations.
+    $originals[$name] = $entity->original;
+
+    if (!isset($entity->{$keys['status']})) {
+      $entity->{$keys['status']} = ENTITY_IN_CODE;
+    }
+    else {
+      $entity->{$keys['status']} |= ENTITY_IN_CODE;
+    }
+    $entity->is_rebuild = TRUE;
+    entity_save('rules_config', $entity);
+    unset($entity->is_rebuild);
+  }
+
+  // Invoke an entity type-specific hook so modules may apply changes, e.g.
+  // efficiently rebuild caches.
+  module_invoke_all('rules_config_defaults_rebuild', $entities, $originals);
+
+  lock_release('entity_rebuild_rules_config');
 }
 
 /**
