@@ -843,6 +843,9 @@ function commerce_discount_fixed_amount(EntityDrupalWrapper $wrapper, $discount_
   $discount_price = $discount_wrapper->commerce_discount_offer->commerce_fixed_amount->value();
   $discount_price['amount'] = -$discount_price['amount'];
 
+  // Get the line item types to apply the discount to.
+  $line_item_types = variable_get('commerce_discount_line_item_types', array_diff(commerce_product_line_item_types(), array('product_discount')));
+
   switch ($wrapper->type()) {
     case 'commerce_order':
 
@@ -875,6 +878,12 @@ function commerce_discount_fixed_amount(EntityDrupalWrapper $wrapper, $discount_
       break;
 
     case 'commerce_line_item':
+      // Check if the line item is configured in the settings to apply the
+      // discount.
+      if (!in_array($wrapper->getBundle(), $line_item_types)) {
+        return;
+      }
+
       // Check whether this discount was already added as a price component.
       $unit_price = commerce_price_wrapper_value($wrapper, 'commerce_unit_price', TRUE);
       foreach ($unit_price['data']['components'] as $component) {
