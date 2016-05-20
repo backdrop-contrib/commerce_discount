@@ -1357,20 +1357,25 @@ function commerce_discount_free_products(EntityDrupalWrapper $wrapper, $discount
  * @param array $data
  *   Optional. An associative array of parameters to include in the line item's
  *   data array along with the discount name.
+ *
+ * @return
+ *   The newly created discount line item.
  */
 function commerce_discount_add_line_item(EntityDrupalWrapper $order_wrapper, $discount_name, $discount_amount, $data = array()) {
   // Create a new line item.
   $discount_line_item = commerce_line_item_new('commerce_discount', $order_wrapper->getIdentifier());
   $discount_line_item->data = array('discount_name' => $discount_name) + $data;
+
   // Setting the bundle to ensure the entity metadata stores it correctly.
   $info = array('bundle' => 'commerce_discount');
   $discount_line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $discount_line_item, $info);
+
   // Initialize the line item unit price.
   $discount_line_item_wrapper->commerce_unit_price->amount = 0;
   $discount_line_item_wrapper->commerce_unit_price->currency_code = $discount_amount['currency_code'];
 
-  // Reset the data array of the line item total field to only include a
-  // base price component, set the currency code from the order.
+  // Reset the data array of the line item total field to only include a base
+  // price component and set the currency code from the order.
   $base_price = array(
     'amount' => 0,
     'currency_code' => $discount_amount['currency_code'],
@@ -1381,10 +1386,12 @@ function commerce_discount_add_line_item(EntityDrupalWrapper $order_wrapper, $di
   // Add the discount price component.
   commerce_discount_add_price_component($discount_line_item_wrapper, $discount_name, $discount_amount);
 
-  // Save the incoming line item now so we get its ID.
+  // Save the incoming line item now so we get its ID and add it to the oder's
+  // line item reference field value.
   commerce_line_item_save($discount_line_item);
-  // Add it to the order's line item reference value.
   $order_wrapper->commerce_line_items[] = $discount_line_item;
+
+  return $discount_line_item;
 }
 
 /**
