@@ -1523,7 +1523,7 @@ function _commerce_discount_update_commerce_total($line_item_wrapper) {
 }
 
 /**
- * Updates the unit price of an existing discount line item.
+ * Updates the unit price of the first discount line item matching the named discount.
  *
  * Non-discount line items are ignored.
  *
@@ -1534,25 +1534,28 @@ function _commerce_discount_update_commerce_total($line_item_wrapper) {
  * @param array $discount_price
  *   The discount amount price array (amount, currency_code).
  *
- * @return bool
- *   TRUE if an existing line item was successfully modified, FALSE otherwise.
+ * @return
+ *   The modified line item or FALSE if not found.
  */
 function commerce_discount_set_existing_line_item_price(EntityDrupalWrapper $order_wrapper, $discount_name, $discount_price) {
-  $modified_existing = FALSE;
+  $modified_line_item = FALSE;
+
   foreach ($order_wrapper->commerce_line_items as $line_item_wrapper) {
     if ($line_item_wrapper->getBundle() == 'commerce_discount') {
       // Add the discount component price if the line item was originally
       // added by discount module.
       $line_item = $line_item_wrapper->value();
+
       if (isset($line_item->data['discount_name']) && $line_item->data['discount_name'] == $discount_name) {
         commerce_discount_set_price_component($line_item_wrapper, $discount_name, $discount_price);
         $line_item_wrapper->save();
-        $modified_existing = TRUE;
+        $modified_line_item = $line_item;
+        break;
       }
     }
   }
 
-  return $modified_existing;
+  return $modified_line_item;
 }
 
 /**
