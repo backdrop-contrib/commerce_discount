@@ -1167,3 +1167,29 @@ function commerce_discount_usage_get_usage($discount_name, $exclude_order_id = F
 
   return $query->execute()->rowCount();
 }
+
+/**
+ * Deletes the first discount line item on an order matching by discount name.
+ *
+ * @param EntityDrupalWrapper $order_wrapper
+ *   The wrapped order entity.
+ * @param string $discount_name
+ *   The name of the discount whose line item should be deleted.
+ *
+ * @return bool
+ *   TRUE if line item deleted, or FALSE if not found.
+ */
+function commerce_discount_delete_discount_line_item_by_name($order_wrapper, $discount_name) {
+  foreach ($order_wrapper->commerce_line_items as $line_item_wrapper) {
+    if ($line_item_wrapper->getBundle() == 'commerce_discount') {
+      $line_item = $line_item_wrapper->value();
+
+      if (isset($line_item->data['discount_name']) && $line_item->data['discount_name'] == $discount_name) {
+        commerce_line_item_delete($line_item_wrapper->line_item_id->value());
+        return TRUE;
+      }
+    }
+  }
+
+  return FALSE;
+}
