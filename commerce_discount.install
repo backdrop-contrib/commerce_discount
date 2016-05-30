@@ -1084,6 +1084,11 @@ function commerce_discount_update_7109() {
  * Enable and update usage and date sub-modules into discount core.
  */
 function commerce_discount_update_7110() {
+  // Fail early if the Date module is not present.
+  if (!module_exists('date')) {
+    throw new DrupalUpdateException('The Date module is required.');
+  }
+
   commerce_discount_install_helper();
   $fields = field_read_fields(array(), array('include_inactive' => TRUE));
 
