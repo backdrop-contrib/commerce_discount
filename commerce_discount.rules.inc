@@ -426,7 +426,7 @@ function commerce_discount_rules_event_info() {
 /**
  * Rules callback: executes the "Check discount compatibility" condition.
  *
- * @param \EntityDrupalWrapper $order_wrapper
+ * @param EntityDrupalWrapper $order_wrapper
  *   The order the discount would be applied to.
  * @param string $discount_name
  *   The discount name whose compatibility needs to be checked.

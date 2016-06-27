@@ -13,7 +13,8 @@
  *
  * Remove any existing commerce discount line item.
  *
- * @param \EntityDrupalWrapper $order_wrapper
+ * @param EntityDrupalWrapper $order_wrapper
+ *   Wrapper of the order object.
  */
 function commerce_discount_commerce_cart_order_refresh(EntityDrupalWrapper $order_wrapper) {
   $line_items_to_delete = array();
@@ -712,8 +713,8 @@ function commerce_discount_type($discount_type) {
  *
  * @return mixed
  *   Either an array of all discount type names keyed by the machine name or a
- *     string containing the human readable name for the specified type. If a
- *     type is specified that does not exist, this function returns FALSE.
+ *   string containing the human readable name for the specified type. If a type
+ *   is specified that does not exist, this function returns FALSE.
  */
 function commerce_discount_type_get_name($type = NULL) {
   $discount_types = commerce_discount_types();
@@ -891,7 +892,7 @@ function commerce_discount_compatibility_strategies() {
 /**
  * Returns the compatibility strategy for the given discount.
  *
- * @param \CommerceDiscount $discount
+ * @param CommerceDiscount $discount
  *   A Commerce Discount object with a commerce_compatibility_strategy field.
  *
  * @return string
@@ -916,7 +917,7 @@ function commerce_discount_get_compatibility_strategy($discount) {
 /**
  * Returns the compatibility selection for the given discount.
  *
- * @param \CommerceDiscount $discount
+ * @param CommerceDiscount $discount
  *   A Commerce Discount object with a commerce_compatibility_selection field.
  *
  * @return int[]
@@ -982,7 +983,7 @@ function commerce_discount_free_shipping_strategies() {
 /**
  * Returns the free shipping strategy for the given discount.
  *
- * @param \CommerceDiscount $discount
+ * @param CommerceDiscount $discount
  *   A Commerce Discount object with a commerce_free_shipping_strategy field.
  *
  * @return string
@@ -1059,7 +1060,7 @@ function commerce_discount_commerce_order_delete($order) {
  *   A fully qualified order object.
  *
  * @return array
- *  List of order discounts.
+ *   List of order discounts.
  */
 function commerce_discount_usage_order_discounts($order) {
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
