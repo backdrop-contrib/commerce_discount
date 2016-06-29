@@ -430,6 +430,9 @@ function commerce_discount_rules_event_info() {
  *   The order the discount would be applied to.
  * @param string $discount_name
  *   The discount name whose compatibility needs to be checked.
+ *
+ * @return bool
+ *   Returns TRUE if nothing has disqualified compatibility.
  */
 function commerce_discount_compatibility_check(EntityDrupalWrapper $order_wrapper, $discount_name) {
   // Ensure the discount we're loading still exists.
@@ -1358,7 +1361,7 @@ function commerce_discount_free_products(EntityDrupalWrapper $wrapper, $discount
  *   Optional. An associative array of parameters to include in the line item's
  *   data array along with the discount name.
  *
- * @return
+ * @return object
  *   The newly created discount line item.
  */
 function commerce_discount_add_line_item(EntityDrupalWrapper $order_wrapper, $discount_name, $discount_amount, $data = array()) {
@@ -1445,6 +1448,7 @@ function commerce_discount_add_price_component(EntityDrupalWrapper $line_item_wr
  * Rules options list callback for product match options.
  *
  * @return array
+ *   Rules option list.
  */
 function _commerce_discount_rules_product_match_options() {
   return array(
@@ -1523,8 +1527,9 @@ function _commerce_discount_update_commerce_total($line_item_wrapper) {
 }
 
 /**
- * Updates the unit price of the first discount line item matching the named discount.
+ * Updates the unit price of the discount line item matching the named discount.
  *
+ * Will be updated only first discount line item.
  * Non-discount line items are ignored.
  *
  * @param EntityDrupalWrapper $order_wrapper
@@ -1534,7 +1539,7 @@ function _commerce_discount_update_commerce_total($line_item_wrapper) {
  * @param array $discount_price
  *   The discount amount price array (amount, currency_code).
  *
- * @return
+ * @return object|bool
  *   The modified line item or FALSE if not found.
  */
 function commerce_discount_set_existing_line_item_price(EntityDrupalWrapper $order_wrapper, $discount_name, $discount_price) {

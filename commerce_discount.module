@@ -10,11 +10,6 @@
 
 /**
  * Implements hook_commerce_cart_order_refresh().
- *
- * Remove any existing commerce discount line item.
- *
- * @param EntityDrupalWrapper $order_wrapper
- *   Wrapper of the order object.
  */
 function commerce_discount_commerce_cart_order_refresh(EntityDrupalWrapper $order_wrapper) {
   $line_items_to_delete = array();
@@ -383,10 +378,10 @@ function commerce_discount_commerce_discount_update($entity) {
 /**
  * Actually rebuild the defaults of a given entity.
  *
- * @see entity_defaults_rebuild().
- *
  * @param CommerceDiscount $discount
  *   Fully loaded Commerce Discount entity to rebuild rules_config for.
+ *
+ * @see entity_defaults_rebuild()
  */
 function _commerce_discount_rebuild_rules_config(CommerceDiscount $discount) {
   // Return early if we can't aquire a lock on the rules config.
@@ -428,7 +423,14 @@ function _commerce_discount_rebuild_rules_config(CommerceDiscount $discount) {
 
   // Check for defaults that disappeared or overridden?
   if (!$existing_rules_config) {
-    $existing_defaults = entity_load_multiple_by_name('rules_config', FALSE, array($keys['status'] => array(ENTITY_OVERRIDDEN, ENTITY_IN_CODE, ENTITY_FIXED)));
+    $statuses = array(
+      $keys['status'] => array(
+        ENTITY_OVERRIDDEN,
+        ENTITY_IN_CODE,
+        ENTITY_FIXED,
+      ),
+    );
+    $existing_defaults = entity_load_multiple_by_name('rules_config', FALSE, $statuses);
 
     foreach ($existing_defaults as $name => $entity) {
       if (empty($entities[$name]) && $name == $rules_config_name) {
@@ -640,7 +642,8 @@ function commerce_discount_commerce_discount_rule_build($rule, $discount) {
   }
 
   if (!empty($discount->commerce_discount_date)) {
-    // Wrap the discount to compare its date value against the current timestamp.
+    // Wrap the discount to compare its date value against the current
+    // timestamp.
     // A quick test showed this actually used less memory than invoking
     // field_get_items() directly, but I'm sure a more rigorous test could be
     // considered in the future for checks as straightforward as this.
@@ -877,8 +880,9 @@ function commerce_discount_product_line_item_title($line_item) {
 }
 
 /**
- * Returns an array of discount compatibility strategies for use in a radio
- * buttons select list.
+ * Returns an array of discount compatibility strategies.
+ *
+ * Returned array used in a radio buttons select list.
  */
 function commerce_discount_compatibility_strategies() {
   return array(
@@ -937,13 +941,16 @@ function commerce_discount_get_compatibility_selection($discount) {
 }
 
 /**
- * Returns a list of discounts applied to make a particular price as determined
- * by its price components.
+ * Returns a list of discounts applied.
+ *
+ * Returned list used to make a particular price as determined by its
+ * price components.
  *
  * @param array $price
  *   A price field value array including a data array with price components.
  *
  * @return array
+ *   Array of applied discounts.
  */
 function commerce_discount_get_discounts_applied_to_price($price) {
   $applied_discounts = array();
@@ -960,7 +967,8 @@ function commerce_discount_get_discounts_applied_to_price($price) {
       $applied_discount_name = substr($component['name'], 9);
       $applied_discount = entity_load_single('commerce_discount', $applied_discount_name);
 
-      // Add it to the list of applied discounts keyed by ID to prevent duplicates.
+      // Add it to the list of applied discounts keyed by ID to prevent
+      // duplicates.
       if (!empty($applied_discount)) {
         $applied_discounts[$applied_discount->discount_id] = $applied_discount_name;
       }
@@ -1053,8 +1061,10 @@ function commerce_discount_commerce_order_delete($order) {
 }
 
 /**
- * Load all discounts connected to an order, including line item level discounts
- * traced through line item unit price components.
+ * Loads all discounts connected to an order.
+ *
+ * Loads discounts including line item level discounts traced through
+ * line item unit price components.
  *
  * @param object $order
  *   A fully qualified order object.

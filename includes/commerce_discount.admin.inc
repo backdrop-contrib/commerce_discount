@@ -425,17 +425,6 @@ function commerce_discount_form_pre_render($fields) {
 
 /**
  * Implements function hook_date_combo_process_alter().
- *
- * @param $element
- *   The date field.
- * @param $form_state
- *   A keyed array containing the current state of the form. In this
- *   context, it is used to accumulate information about which button
- *   was clicked when the form was submitted, as well as the sanitized
- *   $_POST data.
- *
- * @return
- *   The altered date field.
  */
 function commerce_discount_date_combo_process_alter(&$element, &$form_state, $context) {
   if ($element['#field_name'] == 'commerce_discount_date') {
@@ -460,7 +449,8 @@ function commerce_discount_date_combo_process_alter(&$element, &$form_state, $co
  */
 function commerce_discount_date_popup_process_alter(&$element, &$form_state, $context) {
   if ($element['#field']['field_name'] == 'commerce_discount_date') {
-    unset($element['#attributes']['class']); // date-clear.
+    // Date-clear.
+    unset($element['#attributes']['class']);
     array_shift($element['#wrapper_attributes']['class']);
     // Reset the titles and descriptions of the start and end date fields.
     $field_name = end($element['#parents']);

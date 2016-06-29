@@ -9,6 +9,7 @@
  * Testing commerce discounts functionality.
  */
 class CommerceDiscountTest extends CommerceDiscountTestBase {
+
   /**
    * Implementation of getInfo().
    */
@@ -423,7 +424,9 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
   }
 
   /**
-   * Test that delete discounts do not cause fatal errors on cart refresh
+   * Test discount deletion.
+   *
+   * Discount deletion should not cause fatal errors on cart refresh.
    *
    * @link https://www.drupal.org/node/2538812
    */

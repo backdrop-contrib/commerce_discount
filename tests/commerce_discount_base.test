@@ -144,9 +144,9 @@ class CommerceDiscountTestBase extends CommerceBaseTestCase {
   /**
    * Determines whether or not a discount has been applied to an order.
    *
-   * @param $discount_name
+   * @param string $discount_name
    *   The machine-name of the discount to look for.
-   * @param $order
+   * @param object $order
    *   The order object to inspect for the discount.
    *
    * @return bool

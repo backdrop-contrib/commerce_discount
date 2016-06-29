@@ -61,7 +61,12 @@ class CommerceDiscountOfferInlineEntityFormController extends EntityInlineEntity
         'class' => array('commerce-offer-fields-wrapper'),
       ),
       '#weight' => 2,
-      '#parents' => array('commerce_discount_fields', 'commerce_discount_offer', LANGUAGE_NONE, 'form'),
+      '#parents' => array(
+        'commerce_discount_fields',
+        'commerce_discount_offer',
+        LANGUAGE_NONE,
+        'form',
+      ),
     );
 
     // Transfer field elements onto fields container.
