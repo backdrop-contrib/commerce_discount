@@ -546,7 +546,7 @@ function commerce_order_compare_order_amount_options_default() {
 function commerce_order_compare_order_amount_build(EntityDrupalWrapper $wrapper, $operator, $total, $line_item_types) {
   $total_order = 0;
 
-  // Ensure the discount currency code is the same than the order.
+  // Ensure the discount currency code is the same as the order.
   if ($wrapper->commerce_order_total->currency_code->value() != $total['currency_code']) {
     return FALSE;
   }
