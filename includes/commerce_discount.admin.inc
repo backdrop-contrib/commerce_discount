@@ -45,7 +45,7 @@ class CommerceDiscountUIController extends EntityDefaultUIController {
   }
 
   /**
-   * Overriden EntityDefaultUIController::hook_menu().
+   * Overridden EntityDefaultUIController::hook_menu().
    *
    * Call our own page callback to show the "commerce_discount_overview"
    * view, as this view has exposed filters which will not work inside
@@ -127,7 +127,7 @@ function commerce_discount_overview_form() {
  * @param array $form_state
  *   Standard Drupal $form_state.
  * @param CommerceDiscount $commerce_discount
- *   Comment me.
+ *   Commerce discount object.
  * @param string $op
  *   Current operation.
  *
@@ -382,7 +382,7 @@ function commerce_discount_form_submit_delete(&$form, &$form_state) {
  * @param string $value
  *   The machine name, not prefixed with 'discount_'.
  *
- * @return entity|bool
+ * @return object|bool
  *   Whether or not the field machine name is taken.
  */
 function _commerce_discount_name_exists($value) {
@@ -424,7 +424,7 @@ function commerce_discount_form_pre_render($fields) {
 }
 
 /**
- * Implements function hook_date_combo_process_alter().
+ * Implements hook_date_combo_process_alter().
  */
 function commerce_discount_date_combo_process_alter(&$element, &$form_state, $context) {
   if ($element['#field_name'] == 'commerce_discount_date') {

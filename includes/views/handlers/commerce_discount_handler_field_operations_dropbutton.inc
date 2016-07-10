@@ -32,7 +32,7 @@ class commerce_discount_handler_field_operations_dropbutton extends views_handle
     $entity_info = entity_get_info('commerce_discount');
     $path = $entity_info['admin ui']['path'] . '/manage';
 
-    // Preapre the links.
+    // Prepare the links.
     $links = array();
     $links[] = array(
       'href'  => $path . '/' . $commerce_discount->name,

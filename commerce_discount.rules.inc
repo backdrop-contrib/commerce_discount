@@ -485,7 +485,7 @@ function commerce_discount_compatibility_check(EntityDrupalWrapper $order_wrappe
     return FALSE;
   }
 
-  // Get the selected discount value from the disocunt being evaluated.
+  // Get the selected discount value from the discount being evaluated.
   $selection = commerce_discount_get_compatibility_selection($discount);
 
   // If the discount is not compatible with selected discounts, ensure they
@@ -1109,7 +1109,7 @@ function commerce_discount_percent_off_shipping_service($order, $discount_name) 
   // Get the discount component title for later usage.
   $discount_label = check_plain($discount_wrapper->component_title->value());
 
-  // Determine the discount multiplifer based on submitted value.
+  // Determine the discount multiplier based on submitted value.
   $discount_value = $discount_wrapper->commerce_discount_offer->commerce_percent_off_shipping->value();
   if ($discount_value > 1 && $discount_value <= 100) {
     $discount_multiplier = (100 - $discount_value) / 100;
