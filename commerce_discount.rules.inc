@@ -1617,6 +1617,15 @@ function commerce_discount_usage_max_usage($order, $discount_name) {
 function commerce_discount_date_condition($discount_name) {
   $wrapper = entity_metadata_wrapper('commerce_discount', $discount_name);
   $time = time();
+  $start_date = new DateTime();
+  $start_date->setTimestamp($wrapper->commerce_discount_date->value->value());
+  $start_date->setTime(0, 0, 0);
+  $start_date_timestamp = $start_date->getTimestamp();
 
-  return $time >= $wrapper->commerce_discount_date->value->value() && $time <= $wrapper->commerce_discount_date->value2->value();
+  $end_date = new DateTime();
+  $end_date->setTimestamp($wrapper->commerce_discount_date->value2->value());
+  $end_date->setTime(24, 0, 0);
+  $end_date_timestamp = $end_date->getTimestamp();
+
+  return $time >= $start_date_timestamp && $time <= $end_date_timestamp;
 }
