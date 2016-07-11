@@ -122,8 +122,10 @@ class CommerceDiscountDateTest extends CommerceDiscountTestBase {
    */
   public function testDiscountSameDay() {
     // Create a discount valid for today only.
-    $start_time = time();
-    $end_time = time();
+    $start_date = new DateTime();
+    $start_date->setTime(0, 0, 0);
+    $start_time = $start_date->getTimestamp();
+    $end_time = $start_time;
 
     $this->createDateDiscount('product_discount', 'fixed_amount', 300, $start_time, $end_time);
 
