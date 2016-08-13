@@ -94,9 +94,6 @@
 #edit-commerce-discount-type .form-item:hover label {
   cursor: pointer;
 }
-#edit-commerce-discount-type .form-item input {
-  display: inline;
-}
 [dir="ltr"] #edit-commerce-discount-type .form-item {
   float: left;
   margin-right: 20px;
