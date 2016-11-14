@@ -1099,7 +1099,7 @@ function commerce_discount_update_7110() {
   // Migrate from commerce_discount_max_uses to discount_usage_limit.
   foreach (entity_load('commerce_discount') as $discount) {
     $wrapper = entity_metadata_wrapper('commerce_discount', $discount);
-    if (!isset($wrapper->discount_usage_limit) || $wrapper->discount_usage_limit->value() == FALSE
+    if ((!isset($wrapper->discount_usage_limit) || $wrapper->discount_usage_limit->value() == FALSE)
       && isset($wrapper->commerce_discount_max_uses) && $wrapper->commerce_discount_max_uses->value()) {
       $wrapper->discount_usage_limit = $wrapper->commerce_discount_max_uses->value();
       entity_save('commerce_discount', $discount);
