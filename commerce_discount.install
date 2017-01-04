@@ -133,15 +133,15 @@ function commerce_discount_schema() {
     'foreign keys' => array(
       'discount' => array(
         'table' => 'commerce_discount',
-        'column' => array('discount' => 'name'),
+        'columns' => array('discount' => 'name'),
       ),
       'order_id' => array(
         'table' => 'commerce_order',
-        'column' => array('order_id' => 'order_id'),
+        'columns' => array('order_id' => 'order_id'),
       ),
       'mail' => array(
         'table' => 'users',
-        'column' => array('mail' => 'mail'),
+        'columns' => array('mail' => 'mail'),
       ),
     ),
     'indexes' => array(
