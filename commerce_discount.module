@@ -841,6 +841,9 @@ function commerce_discount_commerce_line_item_type_info() {
       'description' => t('Line item for fixed amounts.'),
       'add_form_submit_value' => t('Add discount'),
       'base' => 'commerce_discount_line_item',
+      'callbacks' => array(
+        'title' => 'commerce_discount_line_item_title',
+      ),
     ),
     'product_discount' => array(
       'type' => 'product_discount',
@@ -862,8 +865,10 @@ function commerce_discount_commerce_line_item_type_info() {
  * @return string
  *   The line item title.
  */
-function commerce_discount_line_item_title() {
-  return t('Fixed amount discount');
+function commerce_discount_line_item_title($line_item) {
+  $wrapper = entity_metadata_wrapper('commerce_discount', $line_item->data['discount_name']);
+  $title = $wrapper->component_title->value();
+  return empty($title) ? t('Fixed amount discount') : check_plain($title);
 }
 
 /**
