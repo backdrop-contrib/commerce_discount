@@ -878,6 +878,11 @@ function commerce_discount_fixed_amount(EntityDrupalWrapper $wrapper, $discount_
 
       // Update the total order price, for the next rules condition (if any).
       commerce_order_calculate_total($order);
+      // For some reasons, we need to clear the EMW static cache for the order
+      // total, otherwise the order total when accessed via the wrapper would
+      // be wrong for some reasons, probably caused by the fact that we're
+      // re-wrapping the order in commerce_order_calculate_total()?
+      $wrapper->commerce_order_total->clear();
       break;
 
     case 'commerce_line_item':
@@ -958,6 +963,11 @@ function commerce_discount_percentage(EntityDrupalWrapper $wrapper, $discount_na
 
         // Update the total order price, for the next rules condition (if any).
         commerce_order_calculate_total($order);
+        // For some reasons, we need to clear the EMW static cache for the order
+        // total, otherwise the order total when accessed via the wrapper would
+        // be wrong for some reasons, probably caused by the fact that we're
+        // re-wrapping the order in commerce_order_calculate_total()?
+        $wrapper->commerce_order_total->clear();
       }
       break;
 
@@ -1346,6 +1356,11 @@ function commerce_discount_free_products(EntityDrupalWrapper $wrapper, $discount
 
   // Update the total order price, for the next rules condition (if any).
   commerce_order_calculate_total($order);
+  // For some reasons, we need to clear the EMW static cache for the order
+  // total, otherwise the order total when accessed via the wrapper would
+  // be wrong for some reasons, probably caused by the fact that we're
+  // re-wrapping the order in commerce_order_calculate_total()?
+  $wrapper->commerce_order_total->clear();
 }
 
 /**
