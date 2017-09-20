@@ -66,10 +66,10 @@ class CommerceDiscountUIController extends EntityDefaultUIController {
       'title' => 'List',
       'type' => MENU_DEFAULT_LOCAL_TASK,
     );
-    unset($items[$this->path . '/add']['title callback']);
-    unset($items[$this->path . '/import']['title callback']);
-    $items[$this->path . '/add']['title'] = t('Add discount');
-    $items[$this->path . '/import']['title'] = t('Import discount');
+    $items[$this->path . '/add']['title callback'] = 't';
+    $items[$this->path . '/import']['title callback'] = 't';
+    $items[$this->path . '/add']['title'] = 'Add discount';
+    $items[$this->path . '/import']['title'] = 'Import discount';
 
     $items[$this->path . '/settings'] = array(
       'title' => 'Settings',
