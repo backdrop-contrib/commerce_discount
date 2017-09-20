@@ -1033,23 +1033,41 @@ function commerce_discount_get_free_shipping_strategy($discount) {
  *   The discount name.
  * @param string $mail
  *   The user mail.
- * @param bool $exclude_order_id
- *   If TRUE, the order id will be excluded from the SQL request.
+ * @param int|bool $exclude_order_id
+ *   If provided, the order_id to ignore when calculating the discount usage.
  *
  * @return int
  *   Return the number of usage by mail.
  */
 function commerce_discount_usage_get_usage_by_mail($discount_name, $mail, $exclude_order_id = FALSE) {
-  $query = db_select('commerce_discount_usage', 'g')
-    ->fields('g')
-    ->condition('g.mail', $mail)
-    ->condition('g.discount', $discount_name);
+  $usage = &drupal_static(__FUNCTION__, array());
 
+  if (!isset($usage[$mail])) {
+    $usage[$mail] = array();
+    $query = db_select('commerce_discount_usage', 'g')
+      ->fields('g')
+      ->condition('g.mail', $mail);
+    $results = $query->execute()->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($results as $result) {
+      $usage[$mail] += array(
+        $result['discount'] => array(),
+      );
+      $usage[$mail][$result['discount']][] = $result['order_id'];
+    }
+  }
+  // The usage array for the given discount must be initialized if not set,
+  // otherwise the array_diff will get a wrong argument.
+  $usage[$mail] += array(
+    $discount_name => array(),
+  );
+
+  // Exclude the order_id passed if necessary.
   if ($exclude_order_id) {
-    $query->condition('g.order_id', $exclude_order_id, '<>');
+    $usage[$mail][$discount_name] = array_diff($usage[$mail][$discount_name], array($exclude_order_id));
   }
 
-  return $query->execute()->rowCount();
+  return count($usage[$mail][$discount_name]);
 }
 
 /**
