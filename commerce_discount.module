@@ -916,8 +916,9 @@ function commerce_discount_compatibility_strategies() {
  *   The discount's compatibility strategy or 'any' if none is set.
  */
 function commerce_discount_get_compatibility_strategy($discount) {
-  $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount);
-  $strategy = $discount_wrapper->commerce_compatibility_strategy->value();
+  if (isset($discount->commerce_compatibility_strategy[LANGUAGE_NONE])) {
+    $strategy = $discount->commerce_compatibility_strategy[LANGUAGE_NONE][0]['value'];
+  }
 
   // If the compatibility strategy is not set, default to 'any'.
   if (empty($strategy)) {
@@ -942,12 +943,17 @@ function commerce_discount_get_compatibility_strategy($discount) {
  *   or an empty array if none are selected (or a non-array value is found).
  */
 function commerce_discount_get_compatibility_selection($discount) {
-  $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount);
-  $selection = $discount_wrapper->commerce_compatibility_selection->raw();
+  // Don't use the entity_metadata_wrapper here on purpose for performance
+  // reasons.
+  $items = field_get_items('commerce_discount', $discount, 'commerce_compatibility_selection', LANGUAGE_NONE);
+  $selection = array();
 
-  // Ensure the selection is an array.
-  if (!is_array($selection)) {
-    $selection = array();
+  if (!$items) {
+    return $selection;
+  }
+
+  foreach ($items as $item) {
+    $selection[] = $item['target_id'];
   }
 
   return $selection;

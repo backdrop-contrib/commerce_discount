@@ -83,7 +83,6 @@ function commerce_discount_rules_condition_info() {
         'label' => t('Discount'),
         'description' => t('A discount with a compatibility strategy that requires evaluation.'),
         'options list' => 'commerce_discount_entity_list',
-        'wrapped' => TRUE,
       ),
     ),
     'group' => t('Commerce Discount'),
@@ -1595,8 +1594,15 @@ function _commerce_discount_operator_options() {
  * Rules condition callback: evaluate maximum usage per-person of a discount.
  */
 function commerce_discount_usage_max_usage_per_person($order, $discount_name) {
-  $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount_name);
-  $per_person_limit = $discount_wrapper->discount_usage_per_person->value();
+  if (!$discount = entity_load_single('commerce_discount', $discount_name)) {
+    return FALSE;
+  }
+  $per_person_limit = FALSE;
+
+  // Don't use the wrapper getter on purpose for performance reasons.
+  if (isset($discount->discount_usage_per_person[LANGUAGE_NONE])) {
+    $per_person_limit = $discount->discount_usage_per_person[LANGUAGE_NONE][0]['value'];
+  }
 
   // Nothing to count if the order does not have an email.
   if (!$per_person_limit || !$order->mail) {
@@ -1613,8 +1619,15 @@ function commerce_discount_usage_max_usage_per_person($order, $discount_name) {
  * Rules condition callback: evaluate maximum usage of a discount.
  */
 function commerce_discount_usage_max_usage($order, $discount_name) {
-  $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount_name);
-  $limit = $discount_wrapper->discount_usage_limit->value();
+  if (!$discount = entity_load_single('commerce_discount', $discount_name)) {
+    return FALSE;
+  }
+  $limit = FALSE;
+
+  // Don't use the wrapper getter on purpose for performance reasons.
+  if (isset($discount->discount_usage_limit[LANGUAGE_NONE])) {
+    $limit = $discount->discount_usage_limit[LANGUAGE_NONE][0]['value'];
+  }
 
   if (!$limit) {
     return TRUE;
@@ -1630,16 +1643,22 @@ function commerce_discount_usage_max_usage($order, $discount_name) {
  * Rules condition: Check discount can be applied.
  */
 function commerce_discount_date_condition($discount_name) {
-  $wrapper = entity_metadata_wrapper('commerce_discount', $discount_name);
+  if (!$discount = entity_load_single('commerce_discount', $discount_name)) {
+    return FALSE;
+  }
+  if (!isset($discount->commerce_discount_date[LANGUAGE_NONE])) {
+    return TRUE;
+  }
+  $discount_date = $discount->commerce_discount_date[LANGUAGE_NONE][0];
   $time = time();
 
   $start_date = new DateTime();
-  $start_date->setTimestamp($wrapper->commerce_discount_date->value->value());
+  $start_date->setTimestamp($discount_date['value']);
   $start_date->setTime(0, 0, 0);
   $start_date_timestamp = $start_date->getTimestamp();
 
   $end_date = new DateTime();
-  $end_date->setTimestamp($wrapper->commerce_discount_date->value2->value());
+  $end_date->setTimestamp($discount_date['value2']);
   $end_date->setTime(24, 0, 0);
   $end_date_timestamp = $end_date->getTimestamp();
 
