@@ -86,9 +86,14 @@ class CommerceDiscountTestBase extends CommerceBaseTestCase {
    * @param string $discount_type
    *   The discount type; Either 'order_discount' or 'product_discount'.
    * @param string $offer_type
-   *   The discount offer type; Either 'fixed_amount' or 'percentage'.
+   *   The discount offer type; One of 'fixed_amount', 'percentage',
+   *   'free_products' or 'free_shipping.
    * @param int|array $amount
-   *   The discount offer amount, percentage or product ids array.
+   *   In case of 'fixed_amount' a number: the discount amount.
+   *   In case of 'percentage' a number: the percentage (a number less than 1).
+   *   In case of 'free_products' an array of the product ids.
+   *   In case of 'free_shipping' an array of strings of the shipping service
+   *   names.
    * @param string $name
    *   Discount name - Optional. If given, CANNOT start with a number.
    * @param string $component_title
@@ -114,6 +119,14 @@ class CommerceDiscountTestBase extends CommerceBaseTestCase {
       case 'free_products':
         // Product ids array should be provided for $amount.
         $offer_wrapper->commerce_free_products = $amount;
+        break;
+
+      case 'free_shipping':
+        // Free shipping service names should be provided for $amount.
+        foreach ($amount as $free_shipping) {
+          $offer_wrapper->commerce_free_shipping = $free_shipping;
+          $offer_wrapper->commerce_free_shipping_strategy = 'only_selected';
+        }
         break;
     }
 

@@ -158,18 +158,12 @@ function commerce_discount_commerce_cart_order_empty($order) {
 }
 
 /**
- * Implements hook_commerce_shipping_method_collect_rates().
- *
- * Invokes the events for the various types of shipping offers. Currently, to
- * support ordering all discounts relative to one another, anything that reduces
- * the price outside of a free shipping offer is evaluated as part of the
- * "% off shipping" event. Free shipping offers run last, allowing sites to run
- * offers that discount premium shipping rates while not reducing them to free
- * shipping in the event the base events are free.
+ * Discount the shipping services for a given order.
  */
-function commerce_discount_commerce_shipping_method_collect_rates($method, $order) {
+function commerce_discount_shipping_services($order) {
   rules_invoke_event('commerce_discount_percent_off_shipping', $order);
-  rules_invoke_event('commerce_discount_free_shipping', $order);
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  commerce_discount_commerce_cart_order_refresh($order_wrapper);
 }
 
 /**
@@ -570,7 +564,6 @@ function commerce_discount_commerce_discount_offer_type_info() {
       'label' => t('Free shipping'),
       'action' => 'commerce_discount_free_shipping_service',
       'entity types' => array('commerce_order'),
-      'event' => 'commerce_discount_free_shipping',
     );
     $types['percent_off_shipping'] = array(
       'label' => t('% off of shipping'),

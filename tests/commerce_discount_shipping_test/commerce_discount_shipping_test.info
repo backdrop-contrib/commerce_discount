@@ -1,0 +1,6 @@
+name = Commerce discount test shipping method
+description = Provides shipping methods for commerce discount tests.
+package = Commerce (shipping)
+dependencies[] = commerce
+dependencies[] = commerce_shipping
+core = 7.x

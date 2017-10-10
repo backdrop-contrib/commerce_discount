@@ -1,0 +1,147 @@
+<?php
+
+/**
+ * @file
+ * Commerce Discounts shipping tests.
+ */
+
+/**
+ * Testing commerce shipping discounts functionality.
+ */
+class CommerceDiscountShippingTest extends CommerceDiscountTestBase {
+
+  /**
+   * Implementation of getInfo().
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Shipping discounts',
+      'description' => 'Test shipping discounts functionality',
+      'group' => 'Commerce Discount',
+    );
+  }
+
+  /**
+   * @inheritdoc
+   */
+  public function setUp() {
+    parent::setUp();
+    module_enable(array('commerce_discount_shipping_test'));
+    $this->resetAll();
+  }
+
+  /**
+   * Test shipping discount.
+   */
+  public function testCommerceDiscountFreeShippingDiscount() {
+    $shipping_service_name = 'commerce_discount_cheap_shipping';
+    $decent_shipping_service_name = 'commerce_discount_decent_shipping';
+    $expensive_shipping_service_name = 'commerce_discount_expensive_shipping';
+      // Create an order.
+    $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'checkout_review', NULL);
+    $order_wrapper = commerce_cart_order_refresh($order);
+    $product_wrapper = entity_metadata_wrapper('commerce_product', $this->product);
+    $this->assertEqual($order_wrapper->commerce_order_total->amount->value(), $product_wrapper->commerce_price->amount->value(), t('Order total is 10 USD without shipping and without discount.'));
+
+    // Check shipping prices shown in checkout.
+    $this->drupalLogin($this->store_customer);
+    $this->drupalGet('checkout/' . $order->order_id . '/shipping');
+    $this->assertText('Cheap shipping: $5.00', t('Cheap shipping price displayed correctly on checkout without a discount.'));
+    $this->assertText('Decent shipping: $15.00', t('Decent shipping price displayed correctly on checkout without a discount.'));
+    $this->assertText('Expensive shipping: $25.00', t('Expensive shipping price displayed correctly on checkout without a discount.'));
+    $this->assertText('Deluxe shipping: $55.00', t('Deluxe shipping price displayed correctly on checkout without a discount.'));
+
+    // Add shipping.
+    commerce_shipping_rate_apply($order, $shipping_service_name);
+    commerce_order_save($order);
+    $rate_line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $order->shipping_rates[$shipping_service_name]);
+    $unit_price = $rate_line_item_wrapper->commerce_unit_price->value();
+    $shipping_amount = $unit_price['amount'];
+
+    // Start with a clean slate.
+    /** @var EntityStructureWrapper $order_wrapper */
+    $order_wrapper = commerce_cart_order_refresh($order);
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $this->assertEqual($order_wrapper->commerce_order_total->amount->value(), $product_wrapper->commerce_price->amount->value() + $shipping_amount, t('Order total is 15 USD with cheap shipping without discount.'));
+
+    // Create a discount.
+    $discount = $this->createDiscount('order_discount', 'free_shipping', array($shipping_service_name));
+    // Start a clean slate without $order->shipping_rates.
+    $order = entity_load('commerce_order', array($order->order_id), array(), TRUE);
+    $order = reset($order);
+    commerce_cart_order_refresh($order);
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $this->assertEqual($order_wrapper->commerce_order_total->amount->value(), $product_wrapper->commerce_price->amount->value(), t('Order total is 10 USD with cheap shipping and with free cheap shipping discount.'));
+
+    $this->drupalGet('checkout/' . $order->order_id . '/shipping');
+    $this->assertText('Cheap shipping: $0.00', t('Cheap shipping price displayed correctly on checkout with a cheap discount.'));
+    $this->assertText('Decent shipping: $15.00', t('Decent shipping price displayed correctly on checkout with a cheap discount.'));
+    $this->assertText('Expensive shipping: $25.00', t('Expensive shipping price displayed correctly on checkout with a cheap discount.'));
+    $this->assertText('Deluxe shipping: $55.00', t('Deluxe shipping price displayed correctly on checkout with a cheap discount.'));
+
+    // Remove shipping from order.
+    commerce_shipping_delete_shipping_line_items($order);
+    $order_wrapper = commerce_cart_order_refresh($order);
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $this->assertEqual($order_wrapper->commerce_order_total->amount->value(), $product_wrapper->commerce_price->amount->value(), t('Order total is 10 USD without shipping with free cheap shipping discount.'));
+
+    // Add decent shipping.
+    commerce_shipping_rate_apply($order, $decent_shipping_service_name);
+    commerce_order_save($order);
+    $rate_line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $order->shipping_rates[$decent_shipping_service_name]);
+    $unit_price = $rate_line_item_wrapper->commerce_unit_price->value();
+    $decent_shipping_amount = $unit_price['amount'];
+    $order_wrapper = commerce_cart_order_refresh($order);
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $this->assertEqual($order_wrapper->commerce_order_total->amount->value(), $product_wrapper->commerce_price->amount->value() + $decent_shipping_amount, t('Order total is 25 USD with decent shipping and with free cheap discount.'));
+
+    // Remove discount.
+    entity_delete('commerce_discount', $discount->discount_id);
+    $order_wrapper = commerce_cart_order_refresh($order);
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $this->assertEqual($order_wrapper->commerce_order_total->amount->value(), $product_wrapper->commerce_price->amount->value() + $decent_shipping_amount, t('Order total is 25 USD with decent shipping and without a discount.'));
+
+    // Create discount for the cheap shipping method with 'discount_all' strategy.
+    $discount = $this->createDiscount('order_discount', 'free_shipping', array($shipping_service_name));
+    $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+    $discount_wrapper->commerce_discount_offer->commerce_free_shipping_strategy = 'discount_all';
+    $discount_wrapper->commerce_discount_offer->save();
+    // Start a clean slate without $order->shipping_rates.
+    $order = entity_load('commerce_order', array($order->order_id), array(), TRUE);
+    $order = reset($order);
+    $order_wrapper = commerce_cart_order_refresh($order);
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $this->assertEqual($order_wrapper->commerce_order_total->amount->value(), $product_wrapper->commerce_price->amount->value() + $decent_shipping_amount - $shipping_amount, t('Order total is 20 USD with decent shipping and with a free discount_all cheap shipping discount.'));
+
+    $this->drupalGet('checkout/' . $order->order_id . '/shipping');
+    $this->assertText('Cheap shipping: $0.00', t('Cheap shipping price displayed correctly on checkout with a cheap discount with discount_all strategy.'));
+    $this->assertText('Decent shipping: $10.00', t('Decent shipping price displayed correctly on checkout with a cheap discount with discount_all strategy.'));
+    $this->assertText('Expensive shipping: $20.00', t('Expensive shipping price displayed correctly on checkout with a cheap discount with discount_all strategy.'));
+    $this->assertText('Deluxe shipping: $50.00', t('Deluxe shipping price displayed correctly on checkout with a cheap discount with discount_all strategy.'));
+
+    // Remove discount.
+    entity_delete('commerce_discount', $discount->discount_id);
+    $order_wrapper = commerce_cart_order_refresh($order);
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $this->assertEqual($order_wrapper->commerce_order_total->amount->value(), $product_wrapper->commerce_price->amount->value() + $decent_shipping_amount, t('Order total is 25 USD with decent shipping and without a discount.'));
+
+    // Create discount for the expensive shipping method with 'discount_all' strategy.
+    $discount = $this->createDiscount('order_discount', 'free_shipping', array($expensive_shipping_service_name));
+    $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+    $discount_wrapper->commerce_discount_offer->commerce_free_shipping_strategy = 'discount_all';
+    $discount_wrapper->commerce_discount_offer->save();
+    // Start a clean slate without $order->shipping_rates.
+    $order = entity_load('commerce_order', array($order->order_id), array(), TRUE);
+    $order = reset($order);
+    $order_wrapper = commerce_cart_order_refresh($order);
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $this->assertEqual($order_wrapper->commerce_order_total->amount->value(), $product_wrapper->commerce_price->amount->value(), t('Order total is 10 USD with decent shipping and with a free discount_all expensive shipping discount.'));
+
+    $this->drupalGet('checkout/' . $order->order_id . '/shipping');
+    $this->assertText('Cheap shipping: $0.00', t('Cheap shipping price displayed correctly on checkout with an expensive discount with discount_all strategy.'));
+    $this->assertText('Decent shipping: $0.00', t('Decent shipping price displayed correctly on checkout with an expensive discount with discount_all strategy.'));
+    $this->assertText('Expensive shipping: $0.00', t('Expensive shipping price displayed correctly on checkout with an expensive discount with discount_all strategy.'));
+    $this->assertText('Deluxe shipping: $30.00', t('Deluxe shipping price displayed correctly on checkout with an expensive discount with discount_all strategy.'));
+  }
+
+}
