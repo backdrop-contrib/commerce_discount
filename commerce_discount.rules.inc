@@ -443,6 +443,19 @@ function commerce_discount_compatibility_check(EntityDrupalWrapper $order_wrappe
     return FALSE;
   }
 
+/**
+ *
+ * "For every product on the order, apply whatever the first matching discount
+ * is regardless of what's been applied to other products."
+ *
+ * 1. You have a 25% clearance sale on products of type A.
+ *    - not compatible with any other discount
+ * 2. You have a 10% coupon that shouldn't stack on top of clearance products.
+ *    - compatible
+ * 3. You have a 5% discount on hardcover books.
+ *
+ */
+
   // Get the strategy from the compatibility strategy field.
   $strategy = commerce_discount_get_compatibility_strategy($discount);
 
@@ -910,6 +923,15 @@ function commerce_discount_fixed_amount(EntityDrupalWrapper $wrapper, $discount_
       }
 
       commerce_discount_add_price_component($wrapper, $discount_name, $discount_price);
+      // Save the line item so that it correctly appears in the subsequent
+      // order total calculation.
+      $wrapper->save();
+      // Include the discount price components in the order total so that
+      // commerce_discount_compatibility_check() can find them.
+      $order = $wrapper->order->value();
+      commerce_order_calculate_total($order);
+      commerce_order_save($order);
+
       break;
   }
 }
@@ -995,6 +1017,14 @@ function commerce_discount_percentage(EntityDrupalWrapper $wrapper, $discount_na
         'currency_code' => $unit_price['currency_code'],
       );
       commerce_discount_add_price_component($wrapper, $discount_name, $discount_amount);
+      // Save the line item so that it correctly appears in the subsequent
+      // order total calculation.
+      $wrapper->save();
+      // Include the discount price components in the order total so that
+      // commerce_discount_compatibility_check() can find them.
+      $order = $wrapper->order->value();
+      commerce_order_calculate_total($order);
+      commerce_order_save($order);
       break;
   }
 }
@@ -1072,6 +1102,10 @@ function commerce_discount_free_shipping_service($order, $discount_name) {
       // If this line item is not new (i.e has an ID).
       if ($free_service_wrapper->getIdentifier()) {
         $free_service_wrapper->save();
+        // Include the discount price components in the order total so that
+        // commerce_discount_compatibility_check() can find them.
+        commerce_order_calculate_total($order);
+        commerce_order_save($order);
       }
     }
 
@@ -1103,6 +1137,10 @@ function commerce_discount_free_shipping_service($order, $discount_name) {
         // If this line item is not new (i.e has an ID).
         if ($line_item_wrapper->getIdentifier()) {
           $line_item_wrapper->save();
+          // Include the discount price components in the order total so that
+          // commerce_discount_compatibility_check() can find them.
+          commerce_order_calculate_total($order);
+          commerce_order_save($order);
         }
       }
     }
@@ -1166,6 +1204,13 @@ function commerce_discount_percent_off_shipping_service($order, $discount_name) 
       TRUE,
       FALSE
     );
+    // Save the line item so that it correctly appears in the subsequent
+    // order total calculation.
+    $shipping_line_item_wrapper->save();
+    // Include the discount price components in the order total so that
+    // commerce_discount_compatibility_check() can find them.
+    commerce_order_calculate_total($order);
+    commerce_order_save($order);
   }
   else {
     foreach ($order->shipping_rates as $shipping_service => $shipping_object) {
@@ -1192,6 +1237,13 @@ function commerce_discount_percent_off_shipping_service($order, $discount_name) 
         TRUE,
         FALSE
       );
+      // Save the line item so that it correctly appears in the subsequent
+      // order total calculation.
+      $shipping_line_item_wrapper->save();
+      // Include the discount price components in the order total so that
+      // commerce_discount_compatibility_check() can find them.
+      commerce_order_calculate_total($order);
+      commerce_order_save($order);
     }
   }
 }
@@ -1267,6 +1319,13 @@ function commerce_discount_shipping_upgrade($order, $discount_name) {
     TRUE,
     FALSE
   );
+  // Save the line item so that it correctly appears in the subsequent
+  // order total calculation.
+  $target_line_item_wrapper->save();
+  // Include the discount price components in the order total so that
+  // commerce_discount_compatibility_check() can find them.
+  commerce_order_calculate_total($order);
+  commerce_order_save($order);
 }
 
 /**

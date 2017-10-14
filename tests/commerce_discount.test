@@ -452,4 +452,82 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
     $this->assertTrue($order_wrapper->commerce_order_total->amount->value() == 1000, "Fixed order discount is removed when it's not applicable.");
   }
 
+  /**
+   * Test discount compatibility regression https://www.drupal.org/node/2621526.
+   *
+   * Discount "toggles" when cart page is refreshed.
+   */
+  public function testCommerceDiscountCompatibilityStrategiesRefresh() {
+    // Create two discounts set to execute one after the other.
+    $discount_one = $this->createDiscount('product_discount', 'percentage', 10, 'of1');
+    $discount_one_wrapper = entity_metadata_wrapper('commerce_discount', $discount_one);
+    $discount_two = $this->createDiscount('product_discount', 'percentage', 20, 'of2', 2);
+    $discount_two_wrapper = entity_metadata_wrapper('commerce_discount', $discount_two);
+
+    // Create an order and recalculate discounts.
+    $order = $this->createDummyOrder($this->store_customer->uid, array(
+      $this->product->product_id => 1
+    ), 'completed');
+
+    // Test compatibility with discount one compatible only with discount two
+    // And discount two compatible with any discount. Both should be applied.
+    $discount_one_wrapper->commerce_compatibility_strategy = 'only';
+    $discount_one_wrapper->commerce_compatibility_selection = array(
+      $discount_two->discount_id
+    );
+    $discount_one_wrapper->save();
+    $discount_two_wrapper->commerce_compatibility_strategy = 'any';
+    $discount_two_wrapper->save();
+    commerce_cart_order_refresh($order);
+
+    $properly_applied = $this->discountAppliedToOrder('of1', $order) && $this->discountAppliedToOrder('of2', $order);
+    $this->assertTrue($properly_applied, t('Both discounts applied when discount one is compatible with any discount and discount two is compatible only with discount one.'));
+
+    // Regression test for discount compatibility with itself.
+    commerce_cart_order_refresh($order);
+
+    $properly_applied = $this->discountAppliedToOrder('of1', $order) && $this->discountAppliedToOrder('of2', $order);
+    $this->assertTrue($properly_applied, t('Both discounts applied when discount one is compatible with any discount, discount two is compatible only with discount one and the order refreshed one more time.'));
+  }
+
+  /**
+   * Test discount compatibility regression https://www.drupal.org/node/2621526.
+   *
+   * Two "none" compatible discounts "toggles" when cart page is refreshed.
+   */
+  public function testCommerceDiscountCompatibilityStrategiesRefreshNone() {
+    // Create two discounts set to execute one after the other.
+    $discount_one = $this->createDiscount('product_discount', 'percentage', 10, 'of1');
+    $discount_one_wrapper = entity_metadata_wrapper('commerce_discount', $discount_one);
+    $discount_two = $this->createDiscount('product_discount', 'percentage', 20, 'of2', 2);
+    $discount_two_wrapper = entity_metadata_wrapper('commerce_discount', $discount_two);
+
+    // Create an order and recalculate discounts.
+    $order = $this->createDummyOrder($this->store_customer->uid, array(
+      $this->product->product_id => 1
+    ), 'completed');
+
+    // Test compatibility with both discounts compatible with no other
+    // discounts.
+    // Only first discount should be applied.
+    $discount_one_wrapper->commerce_compatibility_strategy = 'none';
+    $discount_one_wrapper->save();
+    $discount_two_wrapper->commerce_compatibility_strategy = 'none';
+    $discount_two_wrapper->save();
+    commerce_cart_order_refresh($order);
+
+    $properly_applied = $this->discountAppliedToOrder('of1', $order) && ! $this->discountAppliedToOrder('of2', $order);
+    $this->assertTrue($this->discountAppliedToOrder('of1', $order), t('Discount 1.'));
+    $this->assertFalse($this->discountAppliedToOrder('of2', $order), t('Discount 2.'));
+    $this->assertTrue($properly_applied, t('Only first discount applied when both discounts are incompatible with any discounts.'));
+
+    // Regression test for discount compatibility with itself.
+    commerce_cart_order_refresh($order);
+
+    $properly_applied = $this->discountAppliedToOrder('of1', $order) && ! $this->discountAppliedToOrder('of2', $order);
+    $this->assertTrue($this->discountAppliedToOrder('of1', $order), t('Discount 1.'));
+    $this->assertFalse($this->discountAppliedToOrder('of2', $order), t('Discount 2.'));
+    $this->assertTrue($properly_applied, t('Only first discount applied when both discounts are incompatible with any discounts and order refreshed once again.'));
+  }
+
 }
