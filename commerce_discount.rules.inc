@@ -70,12 +70,31 @@ function commerce_discount_rules_condition_info() {
   );
 
   $conditions['commerce_discount_compatibility_check'] = array(
-    'label' => t('Check discount compatibility'),
+    'label' => t('Check discount compatibility at the order level'),
     'parameter' => array(
       'commerce_order' => array(
         'type' => 'commerce_order',
         'label' => t('Order'),
         'description' => t('The order the discount would be applied to.'),
+        'wrapped' => TRUE,
+      ),
+      'commerce_discount' => array(
+        'type' => 'token',
+        'label' => t('Discount'),
+        'description' => t('A discount with a compatibility strategy that requires evaluation.'),
+        'options list' => 'commerce_discount_entity_list',
+      ),
+    ),
+    'group' => t('Commerce Discount'),
+  );
+
+  $conditions['commerce_discount_line_item_compatibility_check'] = array(
+    'label' => t('Check discount compatibility at the line item level'),
+    'parameter' => array(
+      'commerce_line_item' => array(
+        'type' => 'commerce_line_item',
+        'label' => t('Line item'),
+        'description' => t('The line item the discount would be applied to.'),
         'wrapped' => TRUE,
       ),
       'commerce_discount' => array(
@@ -427,7 +446,8 @@ function commerce_discount_rules_event_info() {
 }
 
 /**
- * Rules callback: executes the "Check discount compatibility" condition.
+ * Rules callback: executes the "Check discount compatibility at the order
+ * level" condition.
  *
  * @param EntityDrupalWrapper $order_wrapper
  *   The order the discount would be applied to.
@@ -443,25 +463,60 @@ function commerce_discount_compatibility_check(EntityDrupalWrapper $order_wrappe
     return FALSE;
   }
 
-/**
- *
- * "For every product on the order, apply whatever the first matching discount
- * is regardless of what's been applied to other products."
- *
- * 1. You have a 25% clearance sale on products of type A.
- *    - not compatible with any other discount
- * 2. You have a 10% coupon that shouldn't stack on top of clearance products.
- *    - compatible
- * 3. You have a 5% discount on hardcover books.
- *
- */
+  // Use the order total price field for order level compatibility checks.
+  $order_total = $order_wrapper->commerce_order_total->value();
 
+  return _commerce_discount_check_compatibility($discount, $order_total);
+}
+
+/**
+ * Rules callback: executes the "Check discount compatibility at the line item
+ * level" condition.
+ *
+ * @param EntityDrupalWrapper $line_item_wrapper
+ *   The line item the discount would be applied to.
+ * @param string $discount_name
+ *   The discount name whose compatibility needs to be checked.
+ *
+ * @return bool
+ *   Returns TRUE if nothing has disqualified compatibility.
+ */
+function commerce_discount_line_item_compatibility_check(EntityDrupalWrapper $line_item_wrapper, $discount_name) {
+  // Ensure the discount we're loading still exists.
+  if (!$discount = entity_load_single('commerce_discount', $discount_name)) {
+    return FALSE;
+  }
+
+  // Use the line item total price field for line item level compatibility checks.
+  $line_item_total = $line_item_wrapper->commerce_total->value();
+
+  return _commerce_discount_check_compatibility($discount, $line_item_total);
+}
+
+/**
+ * Performs a discount compatibility check for the given price field.
+ *
+ * @param object $discount
+ *   The discount entity whose compatibility is being checked.
+ * @param array $price
+ *   The price field value whose components array indicates which discounts have
+ *   already been applied to it.
+ *
+ * @return bool
+ *   Boolean indicating whether or not the compatibility check passed.
+ */
+function _commerce_discount_check_compatibility($discount, $price) {
   // Get the strategy from the compatibility strategy field.
   $strategy = commerce_discount_get_compatibility_strategy($discount);
 
-  // Determine which discounts have been applied to the order thus far.
-  $order_total = $order_wrapper->commerce_order_total->value();
-  $applied_discounts = commerce_discount_get_discounts_applied_to_price($order_total);
+  // Determine which discounts of a similar discount type have been applied to
+  // the price thus far. Compatibility checks currently only take into account
+  // discounts of the same type due to process limitations (i.e. Product
+  // discounts *always* apply before Order discounts) and usability constraints
+  // (i.e. we have data to make Order discount applicability dependent on
+  // Product discounts, but we do not have a clear way to indicate that uni-
+  // directionality in the UI yet).
+  $applied_discounts = commerce_discount_get_discounts_applied_to_price($price, $discount->type);
 
   // Ensure none of them indicate they are incompatible with the current one.
   foreach ($applied_discounts as $applied_discount_id => $applied_discount_name) {

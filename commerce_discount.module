@@ -990,11 +990,14 @@ function commerce_discount_get_compatibility_selection($discount) {
  *
  * @param array $price
  *   A price field value array including a data array with price components.
+ * @param string $type
+ *   Optional. A discount type to filter the return array by so that only
+ *   discounts of a matching type are returned.
  *
  * @return array
  *   Array of applied discounts.
  */
-function commerce_discount_get_discounts_applied_to_price($price) {
+function commerce_discount_get_discounts_applied_to_price($price, $type = '') {
   $applied_discounts = array();
 
   // Return early if the price has no components.
@@ -1012,7 +1015,11 @@ function commerce_discount_get_discounts_applied_to_price($price) {
       // Add it to the list of applied discounts keyed by ID to prevent
       // duplicates.
       if (!empty($applied_discount)) {
-        $applied_discounts[$applied_discount->discount_id] = $applied_discount_name;
+        // Only add the discount to the return value if type filtering was not
+        // requested or the type matches.
+        if (empty($type) || $applied_discount->type == $type) {
+          $applied_discounts[$applied_discount->discount_id] = $applied_discount_name;
+        }
       }
     }
   }
