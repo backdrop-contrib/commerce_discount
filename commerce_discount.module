@@ -923,9 +923,9 @@ function commerce_discount_product_line_item_title($line_item) {
 function commerce_discount_compatibility_strategies() {
   return array(
     'any' => t('Any discount'),
-    'except' => t('Any discount except the selected discounts'),
-    'only' => t('Only with the selected discounts'),
-    'none' => t('Not with any other discounts'),
+    'except' => t('Any discount except specific discounts'),
+    'only' => t('Only with specific discounts'),
+    'none' => t('Not with any other discount'),
   );
 }
 

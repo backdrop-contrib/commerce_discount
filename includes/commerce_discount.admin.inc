@@ -261,6 +261,27 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
     $field_form['#attributes']['class'][] = 'commerce-discount-box';
   }
 
+  // Give the compatibility strategy field a title and a description linking to
+  // the compatibility documentation based on the discount type.
+  switch ($form['commerce_discount_fields']['commerce_compatibility_strategy'][LANGUAGE_NONE]['#bundle']) {
+    case 'product_discount':
+      $discount_type_name = t('Product discounts');
+      $description = t('This setting determines which product discounts this discount can be applied after or that can be applied to the same product line item after this one.');
+      break;
+    case 'order_discount':
+      $discount_type_name = t('Order discounts');
+      $description = t('This setting determines which order discounts this discount can be applied after or that can be applied to the same order after this one.');
+      break;
+    default:
+      $discount_type_name = t('discounts of the same type');
+      $description = t('This setting determines which discounts of the same type this discount can be applied after or that can be applied to the same item after this one.');
+      break;
+  }
+
+  $title = t('Compatibility with other %name', array('%name' => $discount_type_name));
+  $form['commerce_discount_fields']['commerce_compatibility_strategy'][LANGUAGE_NONE]['#title'] = $title;
+  $form['commerce_discount_fields']['commerce_compatibility_strategy'][LANGUAGE_NONE]['#description'] = $description . '<br />' . t('For more information, refer to the discount compatibility !link on drupal.org.', array('!link' => '<a href="https://www.drupal.org/node/2917774" target="_blank">' . t('documentation page') . '</a>'));;
+
   // Ensure the compatibility strategy field has a default value.
   if (empty($form['commerce_discount_fields']['commerce_compatibility_strategy'][LANGUAGE_NONE]['#default_value'])) {
     $form['commerce_discount_fields']['commerce_compatibility_strategy'][LANGUAGE_NONE]['#default_value'] = 'any';
