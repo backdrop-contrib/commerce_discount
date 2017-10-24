@@ -83,7 +83,6 @@ class CommerceDiscountDateUITest extends CommerceDiscountTestBase {
     $this->assertEqual($result_end_date, $end_date, 'End date is stored correctly.');
 
     // Check the discounts listing.
-    $this->drupalGet('admin/commerce/discounts', array('query' => array('type' => 'order_discount')));
     $this->assertText($start_date, 'Start date is shown');
     $this->assertText($end_date, 'End date is shown');
   }
@@ -135,7 +134,6 @@ class CommerceDiscountDateUITest extends CommerceDiscountTestBase {
     $this->assertEqual($result_end_date, $end_date, 'End date is stored correctly.');
 
     // Check the discounts listing.
-    $this->drupalGet('admin/commerce/discounts', array('query' => array('type' => 'order_discount')));
     $this->assertText($start_date, 'Start date is shown');
     $this->assertText($end_date, 'End date is shown');
   }

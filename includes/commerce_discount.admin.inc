@@ -387,7 +387,14 @@ function commerce_discount_form_validate($form, &$form_state) {
 function commerce_discount_form_submit(&$form, &$form_state) {
   $commerce_discount = entity_ui_form_submit_build_entity($form, $form_state);
   $commerce_discount->save();
-  $form_state['redirect'] = 'admin/commerce/discounts';
+
+  // Set the redirect based on the type of the discount.
+  if ($commerce_discount->type == 'order_discount') {
+    $form_state['redirect'] = array('admin/commerce/discounts', array('query' => array('type' => 'order_discount')));
+  }
+  else {
+    $form_state['redirect'] = 'admin/commerce/discounts';
+  }
 }
 
 /**

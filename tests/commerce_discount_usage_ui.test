@@ -61,7 +61,6 @@ class CommerceDiscountUsageUITest extends CommerceDiscountTestBase {
     $this->assertTrue($discount_wrapper->discount_usage_limit->value() == 5, 'Discount max uses stored correctly.');
 
     // Check the discounts listing.
-    $this->drupalGet('admin/commerce/discounts', array('query' => array('type' => 'order_discount')));
     $this->assertText(t('@amount available', array('@amount' => 5)), 'Analytics - Max usage is shown.');
     $this->assertText(t('Used @amount times', array('@amount' => 0)), 'Analytics - Usage is shown.');
   }
@@ -103,7 +102,6 @@ class CommerceDiscountUsageUITest extends CommerceDiscountTestBase {
     $this->assertEqual($discount_wrapper->discount_usage_limit->value(), 5, 'Discount max uses stored correctly.');
 
     // Check the discounts listing.
-    $this->drupalGet('admin/commerce/discounts', array('query' => array('type' => 'order_discount')));
     $this->assertText(t('@amount available', array('@amount' => 5)), 'Analytics - Max usage is shown.');
     $this->assertText(t('Used @amount times', array('@amount' => 0)), 'Analytics - Usage is shown.');
   }
