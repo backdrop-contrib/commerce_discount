@@ -118,8 +118,8 @@ class CommerceDiscountUITest extends CommerceDiscountTestBase {
 
     // Check the discounts listing.
     $this->assertUrl('admin/commerce/discounts', array(), 'Landing page after save is the discounts list.');
+    $this->drupalGet('admin/commerce/discounts', array('query' => array('type' => 'order_discount')));
     $this->assertText($values['label'], 'Label of the discount is present.');
-    $this->assertText($values['component_title'], 'Name of the discount is present.');
   }
 
   /**
@@ -193,8 +193,8 @@ class CommerceDiscountUITest extends CommerceDiscountTestBase {
 
     // Check the discounts listing.
     $this->assertUrl('admin/commerce/discounts', array(), 'Landing page after save is the discounts list.');
+    $this->drupalGet('admin/commerce/discounts', array('query' => array('type' => 'order_discount')));
     $this->assertText($values['label'], 'Label of the discount is present.');
-    $this->assertText($values['component_title'], 'Name of the discount is present.');
   }
 
   /**
