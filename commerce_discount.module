@@ -395,6 +395,9 @@ function commerce_discount_field_widget_form_alter(&$element, &$form_state, $con
  * Rebuild Rules configuration.
  */
 function commerce_discount_commerce_discount_insert($entity) {
+  if (module_exists('i18n_string')) {
+    i18n_string_object_update('commerce_discount', $entity);
+  }
   _commerce_discount_rebuild_rules_config($entity);
 }
 
@@ -404,6 +407,16 @@ function commerce_discount_commerce_discount_insert($entity) {
  * Rebuild Rules configuration.
  */
 function commerce_discount_commerce_discount_update($entity) {
+  if (module_exists('i18n_string')) {
+    // Account for name changes.
+    if ($entity->original->name != $entity->name) {
+      i18n_string_update_context(
+        "commerce_discount:commerce_discount:" . $entity->original->name . ":component_title",
+        "commerce_discount:commerce_discount:" . $entity->name . ":component_title"
+      );
+    }
+    i18n_string_object_update('commerce_discount', $entity);
+  }
   _commerce_discount_rebuild_rules_config($entity);
 }
 
@@ -538,6 +551,9 @@ function _commerce_discount_rebuild_rules_config(CommerceDiscount $discount) {
  * Delete referenced commerce_discount_offer upon commerce_discount deletion.
  */
 function commerce_discount_commerce_discount_delete($entity) {
+  if (module_exists('i18n_string')) {
+    i18n_string_object_remove('commerce_discount', $entity);
+  }
   $wrapper = entity_metadata_wrapper('commerce_discount', $entity);
   // Delete the referenced commerce_discount_offer.
   if ($wrapper->commerce_discount_offer->value()) {
@@ -1270,4 +1286,28 @@ function commerce_discount_delete_discount_line_item_by_name($order_wrapper, $di
   }
 
   return FALSE;
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function commerce_discount_entity_info_alter(&$info) {
+  if (module_exists('i18n_string')) {
+    // Enable i18n support via the entity API.
+    $info['commerce_discount']['i18n controller class'] = 'EntityDefaultI18nStringController';
+  }
+}
+
+/**
+ * Implements hook_entity_property_info_alter().
+ */
+function commerce_discount_entity_property_info_alter(&$info) {
+  if (module_exists('i18n_string')) {
+    // Mark some properties as translatable, but also denote that translation
+    // works with i18n_string.
+    foreach (array('component_title') as $name) {
+      $info['commerce_discount']['properties'][$name]['translatable'] = TRUE;
+      $info['commerce_discount']['properties'][$name]['i18n string'] = TRUE;
+    }
+  }
 }
