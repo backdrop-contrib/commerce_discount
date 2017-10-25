@@ -1311,3 +1311,23 @@ function commerce_discount_entity_property_info_alter(&$info) {
     }
   }
 }
+
+/**
+ * Implements hook_query_TAG_alter().
+ */
+function commerce_discount_query_entityreference_alter($query) {
+  $field = $query->getMetaData('field');
+
+  // Alter the default autocomplete for the compatibility selection field...
+  if ($field['field_name'] == 'commerce_compatibility_selection' &&
+    strpos(current_path(), 'entityreference/autocomplete') === 0) {
+    // Extract the bundle of the discount whose compatibility settings are
+    // being adjusted and limit the autocomplete query to discounts of the
+    // same bundle (i.e. discount type, Product vs. Order).
+    $bundle_name = arg(5);
+
+    if (in_array($bundle_name, array('product_discount', 'order_discount'))) {
+      $query->condition('type', $bundle_name);
+    }
+  }
+}
