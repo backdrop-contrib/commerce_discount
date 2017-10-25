@@ -1329,5 +1329,12 @@ function commerce_discount_query_entityreference_alter($query) {
     if (in_array($bundle_name, array('product_discount', 'order_discount'))) {
       $query->condition('type', $bundle_name);
     }
+
+    // Also do not include the current discount itself as an option.
+    $entity_id = arg(6);
+
+    if ($entity_id != 'NULL') {
+      $query->condition('discount_id', $entity_id, '!=');
+    }
   }
 }
