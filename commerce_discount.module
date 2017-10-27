@@ -398,7 +398,10 @@ function commerce_discount_commerce_discount_insert($entity) {
   if (module_exists('i18n_string')) {
     i18n_string_object_update('commerce_discount', $entity);
   }
-  _commerce_discount_rebuild_rules_config($entity);
+  // We need to reload the discount afresh because some fields contain
+  // serialized and empty values.
+  $discount = entity_load_single('commerce_discount', $entity->discount_id);
+  _commerce_discount_rebuild_rules_config(array(clone $discount));
 }
 
 /**
@@ -417,25 +420,31 @@ function commerce_discount_commerce_discount_update($entity) {
     }
     i18n_string_object_update('commerce_discount', $entity);
   }
-  _commerce_discount_rebuild_rules_config($entity);
+  // We need to reload the discount afresh because some fields contain
+  // serialized and empty values.
+  $discount = entity_load_single('commerce_discount', $entity->discount_id);
+  _commerce_discount_rebuild_rules_config(array(clone $discount));
 }
 
 /**
  * Actually rebuild the defaults of a given entity.
  *
- * @param CommerceDiscount $discount
- *   Fully loaded Commerce Discount entity to rebuild rules_config for.
+ * @param array $discounts
+ *   An array of discount entities.
  *
  * @see entity_defaults_rebuild()
  */
-function _commerce_discount_rebuild_rules_config(CommerceDiscount $discount) {
+function _commerce_discount_rebuild_rules_config(array $discounts) {
   // Return early if we can't acquire a lock on the rules config.
   if (!lock_acquire('entity_rebuild_rules_config')) {
     return;
   }
 
   $existing_rules_config = FALSE;
-  $rules_config_name = 'commerce_discount_rule_' . $discount->name;
+  $rules_config_names = array();
+  foreach ($discounts as $discount) {
+    $rules_config_names[] = commerce_discount_build_rule_machine_name($discount->name);
+  }
 
   $info = entity_get_info('rules_config');
   $hook = isset($info['export']['default hook']) ? $info['export']['default hook'] : 'default_rules_config';
@@ -451,18 +460,16 @@ function _commerce_discount_rebuild_rules_config(CommerceDiscount $discount) {
     return;
   }
 
-  // Invoke the hook and collect default entities.
+  // Rebuild the discount rules for the given discounts.
   $entities = array();
-  foreach (module_implements($hook) as $module) {
-    /** @var RulesReactionRule $entity */
-    foreach ((array) module_invoke($module, $hook) as $name => $entity) {
-      if ($name == $rules_config_name) {
-        $entity->{$keys['name']} = $name;
-        $entity->{$keys['module']} = $module;
-        $entities[$name] = $entity;
-        $existing_rules_config = TRUE;
-      }
+  foreach (commerce_discount_build_discount_rules($discounts) as $name => $entity) {
+    if (!in_array($name, $rules_config_names)) {
+      continue;
     }
+    $entity->{$keys['name']} = $name;
+    $entity->{$keys['module']} = 'commerce_discount';
+    $entities[$name] = $entity;
+    $existing_rules_config = TRUE;
   }
   drupal_alter($hook, $entities);
 
@@ -478,7 +485,7 @@ function _commerce_discount_rebuild_rules_config(CommerceDiscount $discount) {
     $existing_defaults = entity_load_multiple_by_name('rules_config', FALSE, $statuses);
 
     foreach ($existing_defaults as $name => $entity) {
-      if (empty($entities[$name]) && $name == $rules_config_name) {
+      if (empty($entities[$name]) && in_array($name, $rules_config_names)) {
         $entity->is_rebuild = TRUE;
         if (entity_has_status('rules_config', $entity, ENTITY_OVERRIDDEN)) {
           $entity->{$keys['status']} = ENTITY_CUSTOM;
@@ -688,14 +695,7 @@ function commerce_discount_commerce_discount_rule_build($rule, $discount) {
     }
   }
 
-  if (!empty($discount->commerce_discount_date)) {
-    // Wrap the discount to compare its date value against the current
-    // timestamp.
-    // A quick test showed this actually used less memory than invoking
-    // field_get_items() directly, but I'm sure a more rigorous test could be
-    // considered in the future for checks as straightforward as this.
-    $wrapper = entity_metadata_wrapper('commerce_discount', $discount);
-
+  if (!is_null($wrapper->commerce_discount_date->value())) {
     // If the end date for the discount has already passed, disable the rule.
     // Note that we add a day to the discount end date. The date field value is
     // set for 12:00:00 AM on the end date, but we want the discount to remain
@@ -1337,4 +1337,109 @@ function commerce_discount_query_entityreference_alter($query) {
       $query->condition('discount_id', $entity_id, '!=');
     }
   }
+}
+
+/**
+ * Build the rules configuration for the given discounts.
+ *
+ * @param array $discounts
+ *   An array of discount entities.
+ *
+ * @return array
+ *   An array of rules configuration objects.
+ */
+function commerce_discount_build_discount_rules(array $discounts) {
+  $rules = array();
+  $types = commerce_discount_types();
+  $offer_types = commerce_discount_offer_types();
+
+  foreach ($discounts as $discount) {
+    $wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+    $wrapper_properties = $wrapper->getPropertyInfo();
+    // Only for Commerce Discount wrappers with Commerce Discount Offer defined.
+    if (isset($wrapper->commerce_discount_offer)) {
+      $offer_bundle = $wrapper->commerce_discount_offer->getBundle();
+      if (!isset($offer_types[$offer_bundle])) {
+        continue;
+      }
+
+      $type = $types[$discount->type];
+      $offer_type = $offer_types[$offer_bundle];
+
+      $rule = rules_reaction_rule();
+
+      $rule->label = $discount->label;
+      $rule->active = $discount->status;
+      $rule->weight = !empty($discount->sort_order) ? $discount->sort_order - 11 : -1;
+      $rule->tags = array('Commerce Discount', check_plain($type['label']));
+
+      $rule
+        ->event(!empty($offer_type['event']) ? $offer_type['event'] : $type['event'])
+        ->action(
+          $offer_type['action'], array(
+            'entity:select' => $type['entity type'],
+            'commerce_discount' => $discount->name,
+          )
+        );
+
+      // Add the compatibility condition to all discounts. Even if the current
+      // discount is compatible with any other discount, we need to prevent it
+      // from being added if a previously applied discount indicates it is not
+      // compatible with the current one.
+      if ($type['entity type'] == 'commerce_order') {
+        $rule->condition('commerce_discount_compatibility_check', array(
+          'commerce_order:select' => 'commerce-order',
+          'commerce_discount' => $discount->name,
+        ));
+      }
+      else {
+        $rule->condition('commerce_discount_line_item_compatibility_check', array(
+          'commerce_line_item:select' => 'commerce-line-item',
+          'commerce_discount' => $discount->name,
+        ));
+      }
+
+      // Let other modules alter the rule object, with configuration specific
+      // to commerce discount. We don't invoke an alter function, as it can
+      // be already achieved by implementing
+      // hook_default_rules_configuration_alter().
+      module_invoke_all('commerce_discount_rule_build', $rule, $discount);
+
+      // Let inline_conditions fields add their own conditions.
+      foreach ($wrapper_properties as $field_name => $property) {
+        if (stripos($property['type'], 'inline_conditions') !== FALSE) {
+          inline_conditions_build($rule, $wrapper->{$field_name}->value());
+        }
+      }
+
+      // Add the commerce discount to the rule configuration, so other may act
+      // according to it, in hook_default_rules_configuration_alter().
+      $rule->commerce_discount = $discount;
+
+      $rule_machine_name = commerce_discount_build_rule_machine_name($discount->name);
+      $rules[$rule_machine_name] = $rule;
+    }
+  }
+
+  return $rules;
+}
+
+/**
+ * Builds a machine name suitable for use as the rule machine name.
+ *
+ * @param string $discount_name
+ *   The machine-name of the discount to build the rule name for.
+ *
+ * @return string
+ *   A machine name to be used as the rule configuration machine name.
+ */
+function commerce_discount_build_rule_machine_name($discount_name) {
+  $rule_machine_name = 'commerce_discount_rule_' . $discount_name;
+  // Ensure the name isn't too long.
+  if (strlen($rule_machine_name) > 64) {
+    // Shorten the name but ensure uniqueness by using a hash.
+    $hash = crc32($discount_name);
+    $rule_machine_name = substr($rule_machine_name, 0, 64 - strlen($hash) - 1) . '_' . $hash;
+  }
+  return $rule_machine_name;
 }
