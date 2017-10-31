@@ -348,8 +348,8 @@ function commerce_discount_rules_action_info() {
     );
   }
 
-  $items['commerce_discount_free_shipping_service'] = array(
-    'label' => t('Free shipping service'),
+  $items['commerce_discount_shipping_service'] = array(
+    'label' => t('Apply shipping discount'),
     'group' => t('Commerce Discount'),
     'parameter' => array(
       'entity' => array(
@@ -363,49 +363,7 @@ function commerce_discount_rules_action_info() {
         'options list' => 'commerce_discount_entity_list',
       ),
     ),
-    'base' => 'commerce_discount_free_shipping_service',
-  );
-
-  $items['commerce_discount_percent_off_shipping_service'] = array(
-    'label' => t('% off of shipping'),
-    'group' => t('Commerce Discount'),
-    'parameter' => array(
-      'entity' => array(
-        'label' => t('Entity'),
-        'type' => 'entity',
-        'wrapped' => FALSE,
-      ),
-      'commerce_discount' => array(
-        'label' => t('Commerce Discount'),
-        'type' => 'token',
-        'options list' => 'commerce_discount_entity_list',
-      ),
-      'shipping_service' => array(
-        'label' => t('Shipping service'),
-        'type' => 'token',
-        'optional' => TRUE,
-        'options list' => 'commerce_shipping_service_options_list',
-      ),
-    ),
-    'base' => 'commerce_discount_percent_off_shipping_service',
-  );
-
-  $items['commerce_discount_shipping_upgrade'] = array(
-    'label' => t('Shipping service upgrade'),
-    'group' => t('Commerce Discount'),
-    'parameter' => array(
-      'entity' => array(
-        'label' => t('Entity'),
-        'type' => 'entity',
-        'wrapped' => FALSE,
-      ),
-      'commerce_discount' => array(
-        'label' => t('Commerce Discount'),
-        'type' => 'token',
-        'options list' => 'commerce_discount_entity_list',
-      ),
-    ),
-    'base' => 'commerce_discount_shipping_upgrade',
+    'base' => 'commerce_discount_shipping_service',
   );
 
   $items['commerce_discount_shipping_services'] = array(
@@ -430,13 +388,6 @@ function commerce_discount_rules_event_info() {
 
   $items['commerce_discount_order'] = array(
     'label' => t('Apply a discount to a given order'),
-    'group' => t('Commerce Discount'),
-    'variables' => entity_rules_events_variables('commerce_order', t('Order', array(), array('context' => 'a drupal commerce order'))),
-    'access callback' => 'commerce_order_rules_access',
-  );
-
-  $items['commerce_discount_percent_off_shipping'] = array(
-    'label' => t('% off of a shipping service'),
     'group' => t('Commerce Discount'),
     'variables' => entity_rules_events_variables('commerce_order', t('Order', array(), array('context' => 'a drupal commerce order'))),
     'access callback' => 'commerce_order_rules_access',
@@ -1085,20 +1036,20 @@ function commerce_discount_percentage(EntityDrupalWrapper $wrapper, $discount_na
 }
 
 /**
- * Rules action: Apply free shipping discount.
+ * Rules action: Apply shipping discount.
  *
  * @param object $order
  *   Wrapped commerce_order entity type.
  * @param string $discount_name
  *   The name of the discount.
  */
-function commerce_discount_free_shipping_service($order, $discount_name) {
+function commerce_discount_shipping_service($order, $discount_name) {
   // Shipping discount rules actions run on two occasions:
   // 1. When selecting the shipping service on checkout. This time
   //   $order->shipping_rates is already set. The cart refresh is triggered
   //   manually in commerce_discount_commerce_shipping_method_collect_rates()
   //   and we don't save the shipping line items, since we create it only to
-  // display the price.
+  //   display the price.
   // 2. On any other cart refresh the $order->shipping_rates is initially
   //   empty so we set it to the shipping line item present on the order (if
   //   any). In this case we want to save the shipping line item.
@@ -1109,11 +1060,10 @@ function commerce_discount_free_shipping_service($order, $discount_name) {
   if (empty($order->shipping_rates)) {
     $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
     foreach ($order_wrapper->commerce_line_items as $line_item_wrapper) {
-      if (!$line_item_wrapper->value() || $line_item_wrapper->getBundle() != 'shipping') {
-        continue;
+      if ($line_item_wrapper->value() && $line_item_wrapper->getBundle() === 'shipping') {
+        $shipping_service = $line_item_wrapper->commerce_shipping_service->value();
+        $order->shipping_rates[$shipping_service] = $line_item_wrapper->value();
       }
-      $shipping_service = $line_item_wrapper->commerce_shipping_service->value();
-      $order->shipping_rates[$shipping_service] = $line_item_wrapper->value();
     }
     if (empty($order->shipping_rates)) {
       return;
@@ -1123,264 +1073,180 @@ function commerce_discount_free_shipping_service($order, $discount_name) {
   // Load the discount to find the free shipping service and strategy.
   $discount = entity_load_single('commerce_discount', $discount_name);
   $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+  $discount_offer_wrapper = $discount_wrapper->commerce_discount_offer;
+  $shipping_discount_offer_type = $discount_offer_wrapper->getBundle();
 
-  try {
-    $free_service = $discount_wrapper->commerce_discount_offer->commerce_free_shipping->raw();
-    $free_shipping_strategy = commerce_discount_get_free_shipping_strategy($discount);
-  }
-  catch (Exception $e) {
-    watchdog('commerce_discount', 'Free shipping configuration issue detected on discount %name.', array('%name' => $discount_wrapper->label()));
-    return;
-  }
+  switch ($shipping_discount_offer_type) {
+    case 'percent_off_shipping':
+      $shipping_service_to_discount = $discount_offer_wrapper->commerce_percent_off_ship_serv->value();
 
-  // If a shipping service is specified, ensure it exists.
-  if (!empty($free_service)) {
-    if (!empty($order->shipping_rates[$free_service])) {
-      // Exit if the shipping service is already free.
-      $free_service_wrapper = entity_metadata_wrapper('commerce_line_item', $order->shipping_rates[$free_service]);
-
-      if ($free_service_wrapper->commerce_unit_price->amount->value() <= 0) {
+      // Determine the discount multiplier based on submitted value.
+      $discount_value = $discount_offer_wrapper->commerce_percent_off_shipping->value();
+      if ($discount_value > 1 && $discount_value <= 100) {
+        $discount_multiplier = $discount_value / 100;
+      }
+      else {
         return;
       }
 
-      // Update the free shipping service line item's rate to be free using the
-      // service's price.
-      $discount_amount = $free_service_wrapper->commerce_unit_price->amount->value();
-      $order->shipping_rates[$free_service]->data['shipping_service']['description'] .= ' <span class="shipping-discount-text">' . check_plain($discount->component_title) . '</span>';
-
-      $discount_price = array(
-        'amount' => -$discount_amount,
-        'currency_code' => $free_service_wrapper->commerce_unit_price->currency_code->value(),
-      );
-      commerce_discount_add_price_component($free_service_wrapper, $discount_name, $discount_price);
-
-      // If this line item is not new (i.e has an ID).
-      if ($free_service_wrapper->getIdentifier()) {
-        $free_service_wrapper->save();
-        // Include the discount price components in the order total so that
-        // commerce_discount_compatibility_check() can find them.
-        commerce_order_calculate_total($order);
-        commerce_order_save($order);
-      }
-    }
-
-    // The free shipping discount strategy requires us to discount all other
-    // shipping services an equivalent amount.
-    if ($free_shipping_strategy == 'discount_all') {
-      foreach ($order->shipping_rates as $service_name => $line_item) {
-        // Skip the free shipping service.
-        if ($service_name == $free_service) {
+      foreach ($order->shipping_rates as $shipping_service => $shipping_object) {
+        // Check if the order contains the shipping rate we want to apply a
+        // discount against. Not all shipping rates apply to all orders.
+        if (isset($shipping_service_to_discount) && $shipping_service_to_discount !== $shipping_service) {
           continue;
         }
+        // Instantiate the line item wrapper.
+        $shipping_line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $order->shipping_rates[$shipping_service]);
 
-        $free_shipping_service = commerce_shipping_service_load($free_service);
-        $callback = commerce_shipping_service_callback($free_shipping_service, 'rate');
-        $price = $callback($free_shipping_service, $order);
-        $discount_amount = $price['amount'];
+        // Calculate the correct value to discount the line item.
+        $discount_shipping_value = -$shipping_line_item_wrapper->commerce_unit_price->amount->value() * $discount_multiplier;
+        _commerce_discount_add_shipping_discount_price_component($shipping_line_item_wrapper, $order, $discount_name, $discount_shipping_value);
+      }
+      break;
 
-        // Apply the discount, ensuring the rate does not discount below 0,
-        // but do not use the message again to reduce spam on the form.
-        $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-        $service_discount_amount = min($discount_amount, $line_item_wrapper->commerce_unit_price->amount->value());
+    case 'free_shipping':
+      try {
+        $free_service = $discount_wrapper->commerce_discount_offer->commerce_free_shipping->raw();
+        $free_shipping_strategy = commerce_discount_get_free_shipping_strategy($discount);
+      }
+      catch (Exception $e) {
+        watchdog('commerce_discount', 'Free shipping configuration issue detected on discount %name.', array('%name' => $discount_wrapper->label()));
+        return;
+      }
 
-        $discount_price = array(
-          'amount' => -$service_discount_amount,
-          'currency_code' => $line_item_wrapper->commerce_unit_price->currency_code->value(),
-        );
-        commerce_discount_add_price_component($line_item_wrapper, $discount_name, $discount_price);
+      // If a shipping service is specified, ensure it exists.
+      if (!empty($free_service)) {
+        if (!empty($order->shipping_rates[$free_service])) {
+          // Exit if the shipping service is already free.
+          $free_service_wrapper = entity_metadata_wrapper('commerce_line_item', $order->shipping_rates[$free_service]);
 
-        // If this line item is not new (i.e has an ID).
-        if ($line_item_wrapper->getIdentifier()) {
-          $line_item_wrapper->save();
-          // Include the discount price components in the order total so that
-          // commerce_discount_compatibility_check() can find them.
-          commerce_order_calculate_total($order);
-          commerce_order_save($order);
+          if ($free_service_wrapper->commerce_unit_price->amount->value() <= 0) {
+            return;
+          }
+
+          // Update the free shipping service line item's rate to be free using the
+          // service's price.
+          $discount_amount = $free_service_wrapper->commerce_unit_price->amount->value();
+          $order->shipping_rates[$free_service]->data['shipping_service']['description'] .= ' <span class="shipping-discount-text">' . check_plain($discount->component_title) . '</span>';
+          _commerce_discount_add_shipping_discount_price_component($free_service_wrapper, $order, $discount_name, -$discount_amount);
+        }
+
+        // The free shipping discount strategy requires us to discount all other
+        // shipping services an equivalent amount.
+        if ($free_shipping_strategy == 'discount_all') {
+          foreach ($order->shipping_rates as $service_name => $line_item) {
+            // Skip the free shipping service.
+            if ($service_name == $free_service) {
+              continue;
+            }
+
+            $free_shipping_service = commerce_shipping_service_load($free_service);
+            $callback = commerce_shipping_service_callback($free_shipping_service, 'rate');
+            $price = $callback($free_shipping_service, $order);
+            $discount_amount = $price['amount'];
+
+            // Apply the discount, ensuring the rate does not discount below 0,
+            // but do not use the message again to reduce spam on the form.
+            $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+            $service_discount_amount = min($discount_amount, $line_item_wrapper->commerce_unit_price->amount->value());
+            _commerce_discount_add_shipping_discount_price_component($line_item_wrapper, $order, $discount_name, -$service_discount_amount);
+          }
         }
       }
-    }
+      break;
+
+    case 'shipping_upgrade':
+      try {
+        $target_service = $discount_offer_wrapper->commerce_shipping_upgrade_target->raw();
+        $source_service = $discount_offer_wrapper->commerce_shipping_upgrade_source->raw();
+      }
+      catch (Exception $e) {
+        watchdog('commerce_discount', 'Shipping service upgrade configuration issue detected on discount %name.', array('%name' => $discount_wrapper->label()));
+        return;
+      }
+
+      // Exit now if we either could not determine a target or source service or
+      // if they were not calculated for this order.
+      if (empty($target_service) ||
+          empty($source_service) || empty($order->shipping_rates[$target_service])) {
+        return;
+      }
+
+      $target_line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $order->shipping_rates[$target_service]);
+
+      // To calculate the source shipping rate with discounts, we need to
+      // remove the target service from the order and apply the source instead.
+      if (empty($order->shipping_rates[$source_service])) {
+        $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+        foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+          // If this line item is a shipping line item...
+          if ($line_item_wrapper->value() && $line_item_wrapper->getBundle() === 'shipping') {
+            $original_shipping_line_item = $line_item_wrapper->value();
+            $order_wrapper->commerce_line_items->offsetUnset($delta);
+            unset($order->shipping_rates[$target_service]);
+          }
+        }
+        module_load_include('inc', 'commerce_shipping', 'commerce_shipping.rules');
+        commerce_shipping_rate_apply($order, $source_service);
+        // Apply discounts on source line item. This won't create an endless
+        // loop since we have unset the source service on the order above.
+        commerce_discount_commerce_cart_order_refresh($order_wrapper);
+      }
+      // Get the discounted rate for the source service.
+      $source_line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $order->shipping_rates[$source_service]);
+
+      // If the prices are already the same, exit now.
+      if ($target_line_item_wrapper->commerce_unit_price->amount->value() <= $source_line_item_wrapper->commerce_unit_price->amount->value()) {
+        return;
+      }
+
+      // Otherwise, calculate the difference between the source and the target.
+      $difference = $source_line_item_wrapper->commerce_unit_price->amount->value() - $target_line_item_wrapper->commerce_unit_price->amount->value();
+
+      // Restore original shipping line item.
+      if (!empty($original_shipping_line_item)) {
+        foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+          // If this line item is a shipping line item...
+          if ($line_item_wrapper->value() && $line_item_wrapper->getBundle() === 'shipping') {
+            $order->commerce_line_items[LANGUAGE_NONE][$delta]['line_item_id'] = $original_shipping_line_item->line_item_id;
+            $order->shipping_rates[$target_service] = $original_shipping_line_item;
+            unset($order->shipping_rates[$source_service]);
+          }
+        }
+      }
+      _commerce_discount_add_shipping_discount_price_component($target_line_item_wrapper, $order, $discount_name, $difference);
+      break;
   }
 }
 
 /**
- * Rules action: Apply percent off of shipping discount.
+ * Helper function for the shipping discount rules action.
  *
+ * @param EntityDrupalWrapper $line_item_wrapper
+ *   The wrapped line item object to add the discount price component to.
  * @param object $order
- *   Wrapped commerce_order entity type.
+ *   The order to save.
  * @param string $discount_name
- *   The name of the discount.
+ *   The discount machine name.
+ * @param integer $amount
+ *   The (negative) discount amount to add as price component.
  */
-function commerce_discount_percent_off_shipping_service($order, $discount_name) {
-  // Load the discount wrapper, which has all the discount information in it.
-  $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount_name);
+function _commerce_discount_add_shipping_discount_price_component($line_item_wrapper, $order, $discount_name, $amount) {
+  $discount_price = array(
+    'amount' => $amount,
+    'currency_code' => $line_item_wrapper->commerce_unit_price->currency_code->value(),
+  );
+  commerce_discount_add_price_component($line_item_wrapper, $discount_name, $discount_price);
 
-  // Load the shipping service, if one was selected.
-  $shipping_service_to_discount = $discount_wrapper->commerce_discount_offer->commerce_percent_off_ship_serv->value();
-
-  // Get the discount component title for later usage.
-  $discount_label = check_plain($discount_wrapper->component_title->value());
-
-  // Determine the discount multiplier based on submitted value.
-  $discount_value = $discount_wrapper->commerce_discount_offer->commerce_percent_off_shipping->value();
-  if ($discount_value > 1 && $discount_value <= 100) {
-    $discount_multiplier = (100 - $discount_value) / 100;
-  }
-
-  // Bring in the $conf global for stashing what shipping services were altered.
-  $conf['discounted_shipping_services'] = array();
-
-  // Determine whether to affect a singular service, or all services.
-  if (isset($shipping_service_to_discount)) {
-    // Check if the order contains the shipping rate we want to apply a discount
-    // against. Not all shipping rates apply to all orders.
-    if (!isset($order->shipping_rates[$shipping_service_to_discount])) {
-      return;
-    }
-
-    // Add singular shipping service to $conf global array.
-    $order->shipping_rates[$shipping_service_to_discount]->data['shipping_service']['description'] .= ' <span class="shipping-discount-text">' . $discount_label . '</span>';
-
-    // Instantiate the line item wrapper.
-    $shipping_line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $order->shipping_rates[$shipping_service_to_discount]);
-
-    // Calculate the correct value to discount the line item.
-    $discounted_shipping_value = $shipping_line_item_wrapper->commerce_unit_price->amount->value() * $discount_multiplier;
-
-    // The following applies the shipping discount to the line item.
-    $shipping_line_item_wrapper->commerce_unit_price->amount = $discounted_shipping_value;
-    $shipping_service = commerce_shipping_service_load($shipping_service_to_discount);
-
-    // Updating the data component. Effectively updates line item price!
-    $shipping_line_item_wrapper->commerce_unit_price->data = array();
-    $shipping_line_item_wrapper->commerce_unit_price->data = commerce_price_component_add(
-      $shipping_line_item_wrapper->commerce_unit_price->value(),
-      $shipping_service['price_component'],
-      $shipping_line_item_wrapper->commerce_unit_price->value(),
-      TRUE,
-      FALSE
-    );
+  if ($line_item_wrapper->getIdentifier()) {
     // Save the line item so that it correctly appears in the subsequent
     // order total calculation.
-    $shipping_line_item_wrapper->save();
+    $line_item_wrapper->save();
     // Include the discount price components in the order total so that
     // commerce_discount_compatibility_check() can find them.
     commerce_order_calculate_total($order);
     commerce_order_save($order);
   }
-  else {
-    foreach ($order->shipping_rates as $shipping_service => $shipping_object) {
-      // Add singular shipping service to $conf global array.
-      $order->shipping_rates[$shipping_service]->data['shipping_service']['description'] .= ' <span class="shipping-discount-text">' . $discount_label . '</span>';
-
-      // Instantiate the line item wrapper.
-      $shipping_line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $order->shipping_rates[$shipping_service]);
-
-      // Calculate the correct value to discount the line item.
-      $discounted_shipping_value = $shipping_line_item_wrapper->commerce_unit_price->amount->value() * $discount_multiplier;
-
-      // The following applies the shipping discount to the line item.
-      $shipping_line_item_wrapper->commerce_unit_price->amount = $discounted_shipping_value;
-
-      $shipping_service = commerce_shipping_service_load($shipping_service_to_discount);
-
-      // Updating the data component. Effectively updates line item price!
-      $shipping_line_item_wrapper->commerce_unit_price->data = array();
-      $shipping_line_item_wrapper->commerce_unit_price->data = commerce_price_component_add(
-        $shipping_line_item_wrapper->commerce_unit_price->value(),
-        $shipping_service['price_component'],
-        $shipping_line_item_wrapper->commerce_unit_price->value(),
-        TRUE,
-        FALSE
-      );
-      // Save the line item so that it correctly appears in the subsequent
-      // order total calculation.
-      $shipping_line_item_wrapper->save();
-      // Include the discount price components in the order total so that
-      // commerce_discount_compatibility_check() can find them.
-      commerce_order_calculate_total($order);
-      commerce_order_save($order);
-    }
-  }
-}
-
-/**
- * Rules action: apply a shipping service upgrade discount.
- *
- * @param object $order
- *   The order object whose discounts are being applied.
- * @param string $discount_name
- *   The name of the shipping service upgrade discount.
- */
-function commerce_discount_shipping_upgrade($order, $discount_name) {
-  // If the order hasn't had any shipping rates calculated for it, exit now as
-  // there's nothing to discount.
-  if (empty($order->shipping_rates)) {
-    return;
-  }
-
-  // Load the discount to find the target and source services.
-  $discount = entity_load_single('commerce_discount', $discount_name);
-  $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount);
-
-  try {
-    $target_service = $discount_wrapper->commerce_discount_offer->commerce_shipping_upgrade_target->raw();
-    $source_service = $discount_wrapper->commerce_discount_offer->commerce_shipping_upgrade_source->raw();
-  }
-  catch (Exception $e) {
-    watchdog('commerce_discount', 'Shipping service upgrade configuration issue detected on discount %name.', array('%name' => $discount_wrapper->label()));
-    return;
-  }
-
-  // Exit now if we either could not determine a target or source service or
-  // if they were not calculated for this order.
-  if (empty($target_service) || empty($order->shipping_rates[$target_service]) ||
-    empty($source_service) || empty($order->shipping_rates[$source_service])) {
-    return;
-  }
-
-  // Get the calculated rates from both items.
-  $target_line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $order->shipping_rates[$target_service]);
-  $source_line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $order->shipping_rates[$source_service]);
-
-  // If the prices are already the same, exit now.
-  if ($target_line_item_wrapper->commerce_unit_price->amount->value() == $source_line_item_wrapper->commerce_unit_price->amount->value()) {
-    return;
-  }
-
-  // Otherwise, calculate the difference between the source and the target.
-  $difference = $source_line_item_wrapper->commerce_unit_price->amount->value() - $target_line_item_wrapper->commerce_unit_price->amount->value();
-
-  // Update the target shipping service line item's rate to match the source
-  // line item's rate using the price component type of the target rate but
-  // a price array that will ensure the discount title gets swapped in for the
-  // price component when the rate is formatted accordingly.
-  $target_line_item_wrapper->commerce_unit_price->amount = $source_line_item_wrapper->commerce_unit_price->amount->value();
-  $order->shipping_rates[$target_service]->data['shipping_service']['description'] .= ' <span class="shipping-discount-text">' . check_plain($discount->component_title) . '</span>';
-
-  $shipping_service = commerce_shipping_service_load($target_service);
-
-  $discount_price = array(
-    'amount' => $difference,
-    'currency_code' => $target_line_item_wrapper->commerce_unit_price->currency_code->value(),
-    'data' => array(
-      'discount_component_title' => check_plain($discount->component_title),
-    ),
-  );
-
-  $target_line_item_wrapper->commerce_unit_price->data = commerce_price_component_add(
-    $target_line_item_wrapper->commerce_unit_price->value(),
-    $shipping_service['price_component'],
-    $discount_price,
-    TRUE,
-    FALSE
-  );
-  // Save the line item so that it correctly appears in the subsequent
-  // order total calculation.
-  $target_line_item_wrapper->save();
-  // Include the discount price components in the order total so that
-  // commerce_discount_compatibility_check() can find them.
-  commerce_order_calculate_total($order);
-  commerce_order_save($order);
 }
 
 /**
