@@ -44,6 +44,14 @@ function commerce_discount_commerce_cart_order_refresh(EntityDrupalWrapper $orde
     $order_wrapper->commerce_discounts = array();
   }
 
+  $currency = commerce_default_currency();
+  if (!is_null($order_wrapper->commerce_order_total->value())) {
+    $currency = $order_wrapper->commerce_order_total->currency_code->value();
+  }
+  // Create an empty price structure used to reinitialize the price
+  // for discount line items.
+  $empty_price = commerce_discount_empty_price($currency);
+
   // Remove discount components from the order total price.
   commerce_discount_remove_discount_components($order_wrapper->commerce_order_total);
 
@@ -58,11 +66,19 @@ function commerce_discount_commerce_cart_order_refresh(EntityDrupalWrapper $orde
     }
     else {
       $cloned_line_items[$line_item_wrapper->getIdentifier()] = clone $line_item_wrapper->value();
+
       // Remove discount components from the line item price fields; the line
       // item may be a discount (so the price will become 0) or another line
       // item like a product (so the price will become the 'original' price).
-      commerce_discount_remove_discount_components($line_item_wrapper->commerce_unit_price);
-      commerce_discount_remove_discount_components($line_item_wrapper->commerce_total);
+      // Remove all the price components for commerce_discount line items.
+      if ($line_item_wrapper->getBundle() == 'commerce_discount') {
+        $line_item_wrapper->commerce_unit_price = $empty_price;
+        $line_item_wrapper->commerce_total = $empty_price;
+      }
+      else {
+        commerce_discount_remove_discount_components($line_item_wrapper->commerce_unit_price);
+        commerce_discount_remove_discount_components($line_item_wrapper->commerce_total);
+      }
     }
   }
   // Re-add all applicable discount price components and/or line items.
@@ -107,6 +123,7 @@ function commerce_discount_commerce_cart_order_refresh(EntityDrupalWrapper $orde
     commerce_line_item_delete_multiple($line_items_to_delete);
   }
 }
+
 
 /**
  * Remove discount components from a given price and recalculate the total.
@@ -1438,4 +1455,23 @@ function commerce_discount_build_rule_machine_name($discount_name) {
     $rule_machine_name = substr($rule_machine_name, 0, 64 - strlen($hash) - 1) . '_' . $hash;
   }
   return $rule_machine_name;
+}
+
+/**
+ * Returns the default array structure for a price field for use when
+ * reinitializing discount line items.
+ *
+ * @param string $currency_code
+ *   The currency code.
+ *
+ * @return array
+ *   An initialized price array.
+ */
+function commerce_discount_empty_price($currency_code) {
+  $price = array(
+    'amount' => 0,
+    'currency_code' => $currency_code,
+  );
+  $price['data'] = commerce_price_component_add($price, 'base_price', $price, TRUE, FALSE);
+  return $price;
 }
