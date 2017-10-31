@@ -929,6 +929,12 @@ function commerce_discount_fixed_amount(EntityDrupalWrapper $wrapper, $discount_
       }
 
       commerce_discount_add_price_component($wrapper, $discount_name, $discount_price);
+
+      // Stop here if the line item is new, otherwise we'll end up creating
+      // new line items.
+      if ($wrapper->getIdentifier() === FALSE) {
+        return;
+      }
       // Save the line item so that it correctly appears in the subsequent
       // order total calculation.
       $wrapper->save();
@@ -1023,6 +1029,11 @@ function commerce_discount_percentage(EntityDrupalWrapper $wrapper, $discount_na
         'currency_code' => $unit_price['currency_code'],
       );
       commerce_discount_add_price_component($wrapper, $discount_name, $discount_amount);
+      // Stop here if the line item is new, otherwise we'll end up creating
+      // new line items.
+      if ($wrapper->getIdentifier() === FALSE) {
+        return;
+      }
       // Save the line item so that it correctly appears in the subsequent
       // order total calculation.
       $wrapper->save();
@@ -1238,7 +1249,7 @@ function _commerce_discount_add_shipping_discount_price_component($line_item_wra
   );
   commerce_discount_add_price_component($line_item_wrapper, $discount_name, $discount_price);
 
-  if ($line_item_wrapper->getIdentifier()) {
+  if ($line_item_wrapper->getIdentifier() !== FALSE) {
     // Save the line item so that it correctly appears in the subsequent
     // order total calculation.
     $line_item_wrapper->save();
