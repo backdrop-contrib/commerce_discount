@@ -20,21 +20,23 @@ function commerce_discount_default_rules_configuration() {
     $rules += commerce_discount_build_discount_rules($discounts);
   }
 
-  // Create a new rule.
-  $rule = rules_reaction_rule();
+  // Create a rule for shipping discounts if shipping is enabled.
+  if (module_exists('commerce_shipping')) {
+    $rule = rules_reaction_rule();
 
-  $rule->label = t('Discount shipping services');
-  $rule->active = TRUE;
-  $rule->weight = 10;
+    $rule->label = t('Discount shipping services');
+    $rule->active = TRUE;
+    $rule->weight = 10;
 
-  // Discount shipping services once all methods have been collected.
-  $rule
-    ->event('commerce_shipping_collect_rates')
-    ->action('commerce_discount_shipping_services', array(
-      'commerce_order:select' => 'commerce-order',
-    ));
+    // Discount shipping services once all methods have been collected.
+    $rule
+      ->event('commerce_shipping_collect_rates')
+      ->action('commerce_discount_shipping_services', array(
+        'commerce_order:select' => 'commerce-order',
+      ));
 
-  $rules['commerce_discount_shipping_services'] = $rule;
+    $rules['commerce_discount_shipping_services'] = $rule;
+  }
 
   return $rules;
 }
