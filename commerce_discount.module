@@ -24,12 +24,6 @@ function commerce_discount_commerce_cart_order_pre_refresh($order) {
       $line_item_wrapper->save();
     }
   }
-  if (isset($order_wrapper->commerce_order_total)) {
-    $changed = commerce_discount_remove_discount_components($order_wrapper->commerce_order_total, $discount_types);
-    if ($changed) {
-      $order_wrapper->save();
-    }
-  }
 }
 
 /**
