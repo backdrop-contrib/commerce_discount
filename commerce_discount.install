@@ -538,14 +538,18 @@ function commerce_discount_install_helper() {
     );
     field_create_instance($instance);
   }
-  if (empty($instances['commerce_order']['commerce_order']['commerce_discounts'])) {
-    $instance = array(
-      'field_name' => 'commerce_discounts',
-      'entity_type' => 'commerce_order',
-      'bundle' => 'commerce_order',
-      'label' => t('Discount reference'),
-    );
-    field_create_instance($instance);
+  // Add discount field to all commerce_order bundles.
+  $order_entity_info = entity_get_info('commerce_order');
+  foreach (array_keys($order_entity_info['bundles']) as $bundle) {
+    if (empty($instances['commerce_order'][$bundle]['commerce_discounts'])) {
+      $instance = array(
+        'field_name' => 'commerce_discounts',
+        'entity_type' => 'commerce_order',
+        'bundle' => $bundle,
+        'label' => t('Discount reference'),
+      );
+      field_create_instance($instance);
+    }
   }
   foreach (commerce_discount_types() as $type => $value) {
     if (empty($instances['commerce_discount'][$type]['inline_conditions']) && isset($field_types['inline_conditions'])) {
