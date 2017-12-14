@@ -31,9 +31,9 @@ class CommerceDiscountShippingTest extends CommerceDiscountTestBase {
   }
 
   /**
-   * Test shipping discount.
+   * Test shipping discounts.
    */
-  public function testCommerceDiscountFreeShippingDiscount() {
+  public function testCommerceDiscountShippingDiscounts() {
     $shipping_service_name = 'commerce_discount_cheap_shipping';
     $decent_shipping_service_name = 'commerce_discount_decent_shipping';
     $expensive_shipping_service_name = 'commerce_discount_expensive_shipping';
@@ -121,7 +121,7 @@ class CommerceDiscountShippingTest extends CommerceDiscountTestBase {
     $this->assertText('Expensive shipping: $0.00', t('Expensive shipping price displayed correctly on checkout shipping with an expensive discount with discount_all strategy.'));
     $this->assertText('Deluxe shipping: $30.00', t('Deluxe shipping price displayed correctly on checkout shipping with an expensive discount with discount_all strategy.'));
 
-    // Select expensive shipping.
+    // Select deluxe shipping.
     $edit = array(
       'commerce_shipping[shipping_service]' => 'commerce_discount_deluxe_shipping',
     );
@@ -148,14 +148,15 @@ class CommerceDiscountShippingTest extends CommerceDiscountTestBase {
     );
     $percent_discount = $this->createDiscount('order_discount', 'percent_off_shipping', $offer, 'percent_off_shipping', '20% off shipping');
     $percent_discount->sort_order = 9;
+    entity_save('commerce_discount', $percent_discount);
 
     $this->drupalPost(NULL, array(), t('Go back'));
     $this->assertText('Cheap shipping: $0.00', t('Cheap shipping price displayed correctly on checkout shipping with an expensive discount with discount_all strategy.'));
-    $this->assertText('Decent shipping: $8.00', t('Decent shipping price displayed correctly on checkout shipping with an expensive discount with discount_all strategy.'));
-    $this->assertText('Expensive shipping: $16.00', t('Expensive shipping price displayed correctly on checkout shipping with an expensive discount with discount_all strategy.'));
-    $this->assertText('Deluxe shipping: $40.00', t('Deluxe shipping price displayed correctly on checkout shipping with an expensive discount with discount_all strategy.'));
+    $this->assertText('Decent shipping: $7.00', t('Decent shipping price displayed correctly on checkout shipping with an expensive discount with discount_all strategy.'));
+    $this->assertText('Expensive shipping: $15.00', t('Expensive shipping price displayed correctly on checkout shipping with an expensive discount with discount_all strategy.'));
+    $this->assertText('Deluxe shipping: $39.00', t('Deluxe shipping price displayed correctly on checkout shipping with an expensive discount with discount_all strategy.'));
 
-    // Select expensive shipping.
+    // Select deluxe shipping.
     $edit = array(
       'commerce_shipping[shipping_service]' => 'commerce_discount_deluxe_shipping',
     );
@@ -164,8 +165,8 @@ class CommerceDiscountShippingTest extends CommerceDiscountTestBase {
     $this->drupalPost(NULL, $edit, t('Continue to next step'));
     $this->assertText('Shipping$55.00', t('Deluxe shipping price is correctly displayed on checkout review.'));
     $this->assertText('Free cheap shipping-$5.00', t('Discount amount on deluxe shipping is correctly displayed in case of a discount_all cheap shipping discount on checkout review.'));
-    $this->assertText('20% off shipping-$10.00', t('Discount amount on deluxe shipping is correctly displayed in case of an "all" 20% shipping discount on checkout review.'));
-    $this->assertText('Order total$50.00', t('Order total with deluxe shipping and with a discount_all cheap shipping discount and a 20% "all" shipping discount is correctly displayed on checkout review.'));
+    $this->assertText('20% off shipping-$11.00', t('Discount amount on deluxe shipping is correctly displayed in case of an "all" 20% shipping discount on checkout review.'));
+    $this->assertText('Order total$49.00', t('Order total with deluxe shipping and with a discount_all cheap shipping discount and a 20% "all" shipping discount is correctly displayed on checkout review.'));
 
     // Remove free shipping discount.
     entity_delete('commerce_discount', $discount->discount_id);
@@ -175,7 +176,7 @@ class CommerceDiscountShippingTest extends CommerceDiscountTestBase {
       'source' => $shipping_service_name,
       'target' => $expensive_shipping_service_name,
     );
-    $percent_discount = $this->createDiscount('order_discount', 'shipping_upgrade', $offer, 'shipping_upgrade', 'Shipping upgrade');
+    $this->createDiscount('order_discount', 'shipping_upgrade', $offer, 'shipping_upgrade', 'Shipping upgrade', 11);
 
     $this->drupalPost(NULL, array(), t('Go back'));
     $this->assertText('Cheap shipping: $4.00', t('Cheap shipping price displayed correctly on checkout shipping with a 20% "all" shipping discount and a cheap->expensive upgrade discount.'));
@@ -194,6 +195,35 @@ class CommerceDiscountShippingTest extends CommerceDiscountTestBase {
     $this->assertText('Shipping upgrade-$16.00', t('Discount amount on expensive shipping is correctly displayed in case of cheap->expensive upgrade discount on checkout review.'));
     $this->assertText('20% off shipping-$5.00', t('20% off discount amount on expensive shipping is correctly displayed on checkout review.'));
     $this->assertText('Order total$14.00', t('Order total with deluxe shipping and with a 20% "all" shipping discount and a cheap->expensive upgrade discount is correctly displayed on checkout review.'));
+  }
+
+  /**
+   * Test a free shipping discount combined with a fixed amount discount.
+   */
+  public function testCommerceDiscountShippingAndFixedAmount() {
+    $shipping_service_name = 'commerce_discount_cheap_shipping';
+    $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'completed', NULL);
+    module_load_include('inc', 'commerce_shipping', 'commerce_shipping.rules');
+    commerce_shipping_rate_apply($order, $shipping_service_name);
+    commerce_order_save($order);
+    unset($order->shipping_rates);
+    $free_shipping_discount = $this->createDiscount('order_discount', 'free_shipping', $shipping_service_name, 'free_shipping', 'Free cheap shipping', 1);
+    $this->createDiscount('order_discount', 'fixed_amount', 1500, 'of1');
+    // Recalculate discounts.
+    $order_wrapper = commerce_cart_order_refresh($order);
+    // Order total before discount is 1000, assert that applying both a shipping
+    // discount and a fixed amount discount isn't causing the order total to
+    // be negative (make sure order total is properly recalculated after the
+    // free shipping discount is applied).
+    $this->assertTrue($order_wrapper->commerce_order_total->amount->value() == 0, 'Order total is correct when the free shipping discount has a lower weight than the fixed amount.');
+
+    // Update the free shipping discount weight to make sure the order total
+    // is correct when the shipping discount is evaluated after the fixed amount
+    // discount.
+    $free_shipping_discount->sort_order = 20;
+    $free_shipping_discount->save();
+    $order_wrapper = commerce_cart_order_refresh($order);
+    $this->assertTrue($order_wrapper->commerce_order_total->amount->value() == 0, 'Order total is correct when the free shipping discount has a higher weight than the fixed amount.');
   }
 
 }
