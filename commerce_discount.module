@@ -14,10 +14,27 @@
  * Remove all discount price components from order and its line item prices.
  */
 function commerce_discount_commerce_cart_order_pre_refresh($order) {
-  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  if (empty($order->commerce_line_items[LANGUAGE_NONE])) {
+    return;
+  }
+  // Gather the line item IDS.
+  $line_item_ids = array();
+  foreach ($order->commerce_line_items[LANGUAGE_NONE] as $item) {
+    if (!isset($item['line_item_id'])) {
+      continue;
+    }
+    $line_item_ids[] = $item['line_item_id'];
+  }
+
+  if (!$line_item_ids) {
+    return;
+  }
+  $line_items = commerce_line_item_load_multiple($line_item_ids);
   $discount_types = commerce_discount_types();
   $discount_types = array_keys($discount_types);
-  foreach ($order_wrapper->commerce_line_items as $line_item_wrapper) {
+
+  foreach ($line_items as $line_item) {
+    $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
     $changed = commerce_discount_remove_discount_components($line_item_wrapper->commerce_unit_price, $discount_types);
     $changed = $changed || commerce_discount_remove_discount_components($line_item_wrapper->commerce_total, $discount_types);
     if ($changed) {
