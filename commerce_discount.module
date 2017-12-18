@@ -14,124 +14,127 @@
  * Remove all discount price components from order and its line item prices.
  */
 function commerce_discount_commerce_cart_order_pre_refresh($order) {
+  // Remove all discount references from the order.
+  if (!empty($order->commerce_discounts)) {
+    $order->commerce_discounts = array();
+  }
+
+  // Stop here if the order doesn't reference any line item.
   if (empty($order->commerce_line_items[LANGUAGE_NONE])) {
     return;
   }
-  // Gather the line item IDS.
+
+  // Gather the line item IDS, don't use the EMW on purpose to load all the
+  // line items at once.
   $line_item_ids = array();
-  foreach ($order->commerce_line_items[LANGUAGE_NONE] as $item) {
+  foreach ($order->commerce_line_items[LANGUAGE_NONE] as $delta => $item) {
     if (!isset($item['line_item_id'])) {
       continue;
     }
-    $line_item_ids[] = $item['line_item_id'];
+    $line_item_ids[$delta] = $item['line_item_id'];
   }
 
+  // If we could not find any line items to load, stop here.
   if (!$line_item_ids) {
     return;
   }
+  // Boolean indicating if the order needs to be recalculated.
+  $recalculate_order_total = FALSE;
   $line_items = commerce_line_item_load_multiple($line_item_ids);
+  $line_items_to_delete = array();
+  $line_item_ids = array_flip($line_item_ids);
+
+  // Get the currency code for this order.
+  $order_total = field_get_items('commerce_order', $order, 'commerce_order_total', LANGUAGE_NONE);
+
+  if ($order_total && isset($order_total[0]['currency_code'])) {
+    $currency_code = $order_total[0]['currency_code'];
+  }
+  else {
+    $currency_code = commerce_default_currency();
+  }
+  // We create an empty price structure to be used by discount line items,
+  // we want to remove all price components present on discount line items such
+  // as VAT, the discount price component itself etc.
+  $empty_price = commerce_discount_empty_price($currency_code);
   $discount_types = commerce_discount_types();
   $discount_types = array_keys($discount_types);
 
   foreach ($line_items as $line_item) {
     $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+    // Remove product_discount line items each time we refresh the order,
+    // we don't know in advance if "free bonus product" rules are still
+    // applicable, if they're, a new line item is going to be recreated when
+    // the "commerce_discount_order" rules event is fired.
+    if ($line_item->type == 'product_discount') {
+      $line_items_to_delete[] = $line_item->line_item_id;
+      $delta = $line_item_ids[$line_item->line_item_id];
+      unset($order->commerce_line_items[LANGUAGE_NONE][$delta]);
+      continue;
+    }
+    elseif ($line_item->type == 'commerce_discount') {
+      $line_item_wrapper->commerce_unit_price = $empty_price;
+      $line_item_wrapper->commerce_total = $empty_price;
+      $recalculate_order_total = TRUE;
+      continue;
+    }
     $changed = commerce_discount_remove_discount_components($line_item_wrapper->commerce_unit_price, $discount_types);
     $changed = $changed || commerce_discount_remove_discount_components($line_item_wrapper->commerce_total, $discount_types);
     if ($changed) {
       $line_item_wrapper->save();
+      $recalculate_order_total = TRUE;
     }
+  }
+
+  // If we have line items to delete, proceed with deletion and re-key the
+  // order line items reference field.
+  if ($line_items_to_delete) {
+    $order->commerce_line_items[LANGUAGE_NONE] = array_values($order->commerce_line_items[LANGUAGE_NONE]);
+    commerce_line_item_delete_multiple($line_items_to_delete, TRUE);
+    $recalculate_order_total = TRUE;
+  }
+
+  // Remove discount components from the order total.
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  if (isset($order_wrapper->commerce_order_total)) {
+    commerce_discount_remove_discount_components($order_wrapper->commerce_order_total);
+  }
+
+  // If some referenced line items were deleted, or if some discount components
+  // were removed, we need to recalculate the order total.
+  if ($recalculate_order_total) {
+    commerce_order_calculate_total($order);
   }
 }
 
 /**
  * Implements hook_commerce_cart_order_refresh().
  */
-function commerce_discount_commerce_cart_order_refresh(EntityDrupalWrapper $order_wrapper) {
+function commerce_discount_commerce_cart_order_refresh($order_wrapper) {
   $line_items_to_delete = array();
-  $cloned_line_items = array();
-  // Remove all discount references from the order.
-  // (If there are none, setting array() would modify the order, so test first.)
-  if (isset($order_wrapper->commerce_discounts) && $order_wrapper->commerce_discounts->value()) {
-    $order_wrapper->commerce_discounts = array();
-  }
-
-  $currency = commerce_default_currency();
-  if (!is_null($order_wrapper->commerce_order_total->value())) {
-    $currency = $order_wrapper->commerce_order_total->currency_code->value();
-  }
-  // Create an empty price structure used to reinitialize the price
-  // for discount line items.
-  $empty_price = commerce_discount_empty_price($currency);
-
-  // Remove discount components from the order total price.
-  commerce_discount_remove_discount_components($order_wrapper->commerce_order_total);
-
-  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-    if (!$line_item_wrapper->value()) {
-      continue;
-    }
-    if ($line_item_wrapper->getBundle() == 'product_discount') {
-      // Delete the line item, and remove it from the order.
-      $line_items_to_delete[] = $line_item_wrapper->getIdentifier();
-      $order_wrapper->commerce_line_items->offsetUnset($delta);
-    }
-    else {
-      $cloned_line_items[$line_item_wrapper->getIdentifier()] = clone $line_item_wrapper->value();
-
-      // Remove discount components from the line item price fields; the line
-      // item may be a discount (so the price will become 0) or another line
-      // item like a product (so the price will become the 'original' price).
-      // Remove all the price components for commerce_discount line items.
-      if ($line_item_wrapper->getBundle() == 'commerce_discount') {
-        $line_item_wrapper->commerce_unit_price = $empty_price;
-        $line_item_wrapper->commerce_total = $empty_price;
-      }
-      else {
-        commerce_discount_remove_discount_components($line_item_wrapper->commerce_unit_price);
-        commerce_discount_remove_discount_components($line_item_wrapper->commerce_total);
-      }
-    }
-  }
+  // We need to make sure the order total is correct before evaluating discount
+  // rules, order total may not be correct when our refresh implementation is
+  // invoked.
+  commerce_discount_calculate_order_total($order_wrapper);
   // Re-add all applicable discount price components and/or line items.
   rules_invoke_event('commerce_discount_order', $order_wrapper);
 
-  // Save the line items which have changes after removing/re-adding discounts;
-  // except if one of our discount type line items still has price 0, delete it.
+  // After the discount rules were evaluated, we need to check if we have
+  // some discount line items with empty prices (we need to delete them).
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-    if (!$line_item_wrapper->value() || $line_item_wrapper->getBundle() == 'product_discount') {
+    if (!$line_item_wrapper->value() || $line_item_wrapper->getBundle() != 'commerce_discount') {
       continue;
     }
-    $id = $line_item_wrapper->getIdentifier();
-
-    // Only check non-new line items; new ones have already been saved.
-    if (!isset($cloned_line_items[$id])) {
-      continue;
-    }
-
     $unit_price = commerce_price_wrapper_value($line_item_wrapper, 'commerce_unit_price', TRUE);
-    if ($line_item_wrapper->getBundle() == 'commerce_discount' && empty($unit_price['amount'])) {
-      $line_items_to_delete[] = $id;
+    if (empty($unit_price['amount'])) {
+      $line_items_to_delete[] = $line_item_wrapper->getIdentifier();
       $order_wrapper->commerce_line_items->offsetUnset($delta);
-    }
-    else {
-      // Check for changes, in commerce_unit_price (in the same way as
-      // commerce_cart_order_refresh() does) and quantity.
-      // (Don't check e.g. commerce_total; it may not be updated yet.)
-      $old_line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $cloned_line_items[$id]);
-      $old_unit_price = commerce_price_wrapper_value($old_line_item_wrapper, 'commerce_unit_price', TRUE);
-
-      if ($unit_price['amount'] != $old_unit_price['amount'] ||
-        $unit_price['currency_code'] != $old_unit_price['currency_code'] ||
-        $unit_price['data']['components'] != $old_unit_price['data']['components']) {
-        // Save changed line item (which will correctly set commerce_total).
-        $line_item_wrapper->save();
-      }
     }
   }
 
+  // Delete discount line item if necessary.
   if ($line_items_to_delete) {
-    // Delete line items.
-    commerce_line_item_delete_multiple($line_items_to_delete);
+    commerce_line_item_delete_multiple($line_items_to_delete, TRUE);
   }
 }
 
@@ -211,8 +214,10 @@ function commerce_discount_commerce_cart_order_empty($order) {
     }
   }
 
-  // Delete line items.
-  commerce_line_item_delete_multiple($line_items_to_delete);
+  if ($line_items_to_delete) {
+    // Delete line items.
+    commerce_line_item_delete_multiple($line_items_to_delete);
+  }
 }
 
 /**
@@ -1485,4 +1490,94 @@ function commerce_discount_empty_price($currency_code) {
   );
   $price['data'] = commerce_price_component_add($price, 'base_price', $price, TRUE, FALSE);
   return $price;
+}
+
+/**
+ * Dumb copy of commerce_order_calculate_total() which accepts a wrapped order.
+ * This is necessary when called from within a function that already has a
+ * wrapped order entity to make sure the static cache of the
+ * commerce_order_total field is correctly updated.
+ */
+function commerce_discount_calculate_order_total($order_wrapper) {
+  // First determine the currency to use for the order total.
+  $default_currency_code = $currency_code = commerce_default_currency();
+  $currencies = array();
+
+  // Populate an array of how many line items on the order use each currency.
+  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    // If the current line item actually no longer exists...
+    if (!$line_item_wrapper->value()) {
+      // Remove the reference from the order and continue to the next value.
+      $order_wrapper->commerce_line_items->offsetUnset($delta);
+      continue;
+    }
+
+    $line_item_currency_code = $line_item_wrapper->commerce_total->currency_code->value();
+
+    if (!isset($currencies[$line_item_currency_code])) {
+      $currencies[$line_item_currency_code] = 1;
+    }
+    else {
+      $currencies[$line_item_currency_code]++;
+    }
+  }
+
+  reset($currencies);
+
+  // If only one currency is present on the order, use that to calculate the
+  // order total.
+  if (count($currencies) == 1) {
+    $currency_code = key($currencies);
+  }
+  elseif (isset($currencies[$default_currency_code])) {
+    // Otherwise use the site default currency if it's in the order.
+    $currency_code = $default_currency_code;
+  }
+  elseif (count($currencies) > 1) {
+    // Otherwise use the first currency on the order. We do this instead of
+    // trying to determine the most dominant currency for now because using the
+    // first currency leaves the option open for a UI based module to let
+    // customers reorder the items in the cart by currency to get the order
+    // total in a different currency. The currencies array still contains useful
+    // data, though, should we decide to expand on the count by currency approach.
+    $currency_code = key($currencies);
+  }
+
+  // Initialize the order total with the selected currency.
+  $order_wrapper->commerce_order_total->amount = 0;
+  $order_wrapper->commerce_order_total->currency_code = $currency_code;
+
+  // Reset the data array of the order total field to only include a
+  // base price component, set the currency code from any line item.
+  $base_price = array(
+    'amount' => 0,
+    'currency_code' => $currency_code,
+    'data' => array(),
+  );
+
+  $order_wrapper->commerce_order_total->data = commerce_price_component_add($base_price, 'base_price', $base_price, TRUE);
+  $order_total = $order_wrapper->commerce_order_total->value();
+
+  // Then loop over each line item and add its total to the order total.
+  $amount = 0;
+
+  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    // Convert the line item's total to the order's currency for totalling.
+    $line_item_total = $line_item_wrapper->commerce_total->value();
+    $component_total = commerce_price_component_total($line_item_total);
+
+    // Add the totals.
+    $amount += commerce_currency_convert(
+      $component_total['amount'],
+      $component_total['currency_code'],
+      $currency_code
+    );
+
+    // Combine the line item total's component prices into the order total.
+    $order_total['data'] = commerce_price_components_combine($order_total, $line_item_total);
+  }
+
+  // Update the order total price field with the final total amount and data.
+  $order_wrapper->commerce_order_total->amount = round($amount);
+  $order_wrapper->commerce_order_total->data = $order_total['data'];
 }

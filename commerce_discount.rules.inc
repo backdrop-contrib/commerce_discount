@@ -416,8 +416,8 @@ function commerce_discount_compatibility_check(EntityDrupalWrapper $order_wrappe
 
   // Use the order total price field for order level compatibility checks.
   $order_total = $order_wrapper->commerce_order_total->value();
-
-  return _commerce_discount_check_compatibility($discount, $order_total);
+  $return = _commerce_discount_check_compatibility($discount, $order_total);
+  return $return;
 }
 
 /**
@@ -438,10 +438,10 @@ function commerce_discount_line_item_compatibility_check(EntityDrupalWrapper $li
     return FALSE;
   }
 
-  // Use the line item total price field for line item level compatibility checks.
-  $line_item_total = $line_item_wrapper->commerce_total->value();
+  // Use the line item unit price field for line item level compatibility checks.
+  $unit_price = $line_item_wrapper->commerce_unit_price->value();
 
-  return _commerce_discount_check_compatibility($discount, $line_item_total);
+  return _commerce_discount_check_compatibility($discount, $unit_price);
 }
 
 /**
@@ -899,12 +899,7 @@ function commerce_discount_fixed_amount(EntityDrupalWrapper $wrapper, $discount_
       }
 
       // Update the total order price, for the next rules condition (if any).
-      commerce_order_calculate_total($order);
-      // For some reasons, we need to clear the EMW static cache for the order
-      // total, otherwise the order total when accessed via the wrapper would
-      // be wrong for some reasons, probably caused by the fact that we're
-      // re-wrapping the order in commerce_order_calculate_total()?
-      $wrapper->commerce_order_total->clear();
+      commerce_discount_calculate_order_total($wrapper);
       break;
 
     case 'commerce_line_item':
@@ -984,12 +979,7 @@ function commerce_discount_percentage(EntityDrupalWrapper $wrapper, $discount_na
         }
 
         // Update the total order price, for the next rules condition (if any).
-        commerce_order_calculate_total($order);
-        // For some reasons, we need to clear the EMW static cache for the order
-        // total, otherwise the order total when accessed via the wrapper would
-        // be wrong for some reasons, probably caused by the fact that we're
-        // re-wrapping the order in commerce_order_calculate_total()?
-        $wrapper->commerce_order_total->clear();
+        commerce_discount_calculate_order_total($wrapper);
       }
       break;
 
@@ -1232,11 +1222,7 @@ function _commerce_discount_add_shipping_discount_price_component($line_item_wra
     // Save the line item so that it correctly appears in the subsequent
     // order total calculation.
     $line_item_wrapper->save();
-    commerce_order_calculate_total($order_wrapper->value());
-    // The wrapper static cache contains an outdated order total, probably
-    // caused by commerce_order_calculate_total() which is re-wrapping the
-    // order.
-    $order_wrapper->commerce_order_total->clear();
+    commerce_discount_calculate_order_total($order_wrapper);
     return TRUE;
   }
 
@@ -1334,15 +1320,8 @@ function commerce_discount_free_products(EntityDrupalWrapper $wrapper, $discount
 
     // Add the free bonus product to order's line items.
     $wrapper->commerce_line_items[] = $line_item;
+    commerce_discount_calculate_order_total($wrapper);
   }
-
-  // Update the total order price, for the next rules condition (if any).
-  commerce_order_calculate_total($order);
-  // For some reasons, we need to clear the EMW static cache for the order
-  // total, otherwise the order total when accessed via the wrapper would
-  // be wrong for some reasons, probably caused by the fact that we're
-  // re-wrapping the order in commerce_order_calculate_total()?
-  $wrapper->commerce_order_total->clear();
 }
 
 /**
@@ -1436,9 +1415,6 @@ function commerce_discount_add_price_component(EntityDrupalWrapper $line_item_wr
   $unit_price = commerce_price_wrapper_value($line_item_wrapper, 'commerce_unit_price', TRUE);
   $type = empty($component_title) ? 'discount' : check_plain('discount|' . $discount_name);
   $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add($unit_price, $type, $difference, TRUE, TRUE);
-
-  // Update the line item total.
-  _commerce_discount_update_commerce_total($line_item_wrapper);
 }
 
 /**
@@ -1487,40 +1463,6 @@ function commerce_discount_set_price_component(EntityDrupalWrapper $line_item_wr
   $unit_price = commerce_price_wrapper_value($line_item_wrapper, 'commerce_unit_price', TRUE);
   $type = empty($component_title) ? 'discount' : check_plain('discount|' . $discount_name);
   $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add($unit_price, $type, $discount_amount, TRUE, TRUE);
-
-  // Update the line item total.
-  _commerce_discount_update_commerce_total($line_item_wrapper);
-}
-
-/**
- * Update commerce_total without saving line item.
- *
- * To have the order total refreshed without saving the line item.
- * Taken from CommerceLineItemEntityController::save().
- */
-function _commerce_discount_update_commerce_total($line_item_wrapper) {
-  $quantity = $line_item_wrapper->quantity->value();
-
-  // Update the total of the line item based on the quantity and unit price.
-  $unit_price = commerce_price_wrapper_value($line_item_wrapper, 'commerce_unit_price', TRUE);
-
-  $line_item_wrapper->commerce_total->amount = $quantity * $unit_price['amount'];
-  $line_item_wrapper->commerce_total->currency_code = $unit_price['currency_code'];
-
-  // Add the components multiplied by the quantity to the data array.
-  if (empty($unit_price['data']['components'])) {
-    $unit_price['data']['components'] = array();
-  }
-  else {
-    foreach ($unit_price['data']['components'] as $key => &$component) {
-      $component['price']['amount'] *= $quantity;
-    }
-  }
-
-  // Set the updated data array to the total price.
-  $line_item_wrapper->commerce_total->data = $unit_price['data'];
-  // Reset the cache because we aren't saving it.
-  entity_get_controller('commerce_line_item')->resetCache(array($line_item_wrapper->getIdentifier()));
 }
 
 /**
