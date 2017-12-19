@@ -12,16 +12,19 @@
  * Implements hook_commerce_cart_order_refresh().
  */
 function commerce_discount_commerce_cart_order_refresh($order_wrapper) {
+  // Remove all discount references from the order.
+  // (If there are none, setting array() would modify the order, so test first.)
+  if (isset($order_wrapper->commerce_discounts) && $order_wrapper->commerce_discounts->value()) {
+    $order_wrapper->commerce_discounts = array();
+  }
   if (!isset($order_wrapper->commerce_line_items) || $order_wrapper->commerce_line_items->count() <= 0) {
     return;
   }
   $line_items_to_delete = array();
 
+  $currency_code = commerce_default_currency();
   if (!is_null($order_wrapper->commerce_order_total->value())) {
     $currency_code = $order_wrapper->commerce_order_total->currency_code->value();
-  }
-  else {
-    $currency_code = commerce_default_currency();
   }
   // We create an empty price structure to be used by discount line items,
   // we want to remove all price components present on discount line items such
@@ -45,8 +48,8 @@ function commerce_discount_commerce_cart_order_refresh($order_wrapper) {
     // applicable, if they're, a new line item is going to be recreated when
     // the "commerce_discount_order" rules event is fired.
     elseif ($line_item_wrapper->getBundle() == 'product_discount') {
-      $order_wrapper->commerce_line_items->offsetUnset($delta);
       $line_items_to_delete[] = $line_item_wrapper->getIdentifier();
+      $order_wrapper->commerce_line_items->offsetUnset($delta);
       continue;
     }
     elseif ($line_item_wrapper->getBundle() == 'shipping') {
