@@ -30,7 +30,7 @@ function commerce_discount_default_rules_configuration() {
     ->action('commerce_discount_remove_discount_components_on_products', array(
       'commerce_line_item:select' => 'commerce-line-item',
     ));
-  $rules['commerce_discount_remove_discount_components_on_sell_price_calculation'] = $rule;
+  $rules['commerce_discount_remove_discount_components_on_products'] = $rule;
 
   // Create a rule for shipping discounts if shipping is enabled.
   if (module_exists('commerce_shipping')) {

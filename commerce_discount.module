@@ -9,46 +9,16 @@
  */
 
 /**
- * Implements hook_commerce_cart_order_pre_refresh().
- *
- * Remove all discount price components from order and its line item prices.
+ * Implements hook_commerce_cart_order_refresh().
  */
-function commerce_discount_commerce_cart_order_pre_refresh($order) {
-  // Remove all discount references from the order.
-  if (!empty($order->commerce_discounts)) {
-    $order->commerce_discounts = array();
-  }
-
-  // Stop here if the order doesn't reference any line item.
-  if (empty($order->commerce_line_items[LANGUAGE_NONE])) {
+function commerce_discount_commerce_cart_order_refresh($order_wrapper) {
+  if (!isset($order_wrapper->commerce_line_items) || $order_wrapper->commerce_line_items->count() <= 0) {
     return;
   }
-
-  // Gather the line item IDS, don't use the EMW on purpose to load all the
-  // line items at once.
-  $line_item_ids = array();
-  foreach ($order->commerce_line_items[LANGUAGE_NONE] as $delta => $item) {
-    if (!isset($item['line_item_id'])) {
-      continue;
-    }
-    $line_item_ids[$delta] = $item['line_item_id'];
-  }
-
-  // If we could not find any line items to load, stop here.
-  if (!$line_item_ids) {
-    return;
-  }
-  // Boolean indicating if the order total needs to be recalculated.
-  $recalculate_order_total = FALSE;
-  $line_items = commerce_line_item_load_multiple($line_item_ids);
   $line_items_to_delete = array();
-  $line_item_ids = array_flip($line_item_ids);
 
-  // Get the currency code for this order.
-  $order_total = field_get_items('commerce_order', $order, 'commerce_order_total', LANGUAGE_NONE);
-
-  if ($order_total && isset($order_total[0]['currency_code'])) {
-    $currency_code = $order_total[0]['currency_code'];
+  if (!is_null($order_wrapper->commerce_order_total->value())) {
+    $currency_code = $order_wrapper->commerce_order_total->currency_code->value();
   }
   else {
     $currency_code = commerce_default_currency();
@@ -58,65 +28,37 @@ function commerce_discount_commerce_cart_order_pre_refresh($order) {
   // as VAT, the discount price component itself etc.
   $empty_price = commerce_discount_empty_price($currency_code);
 
-  // The discount price components for product line items are not removed
-  // inside that loop, that is done via a product pricing rule.
-  foreach ($line_items as $line_item) {
-    $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-    // Remove product_discount line items each time we refresh the order,
-    // we don't know in advance if "free bonus product" rules are still
-    // applicable, if they're, a new line item is going to be recreated when
-    // the "commerce_discount_order" rules event is fired.
-    if ($line_item->type == 'product_discount') {
-      $line_items_to_delete[] = $line_item->line_item_id;
-      $delta = $line_item_ids[$line_item->line_item_id];
-      unset($order->commerce_line_items[LANGUAGE_NONE][$delta]);
+  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    if (!$line_item_wrapper->value()) {
       continue;
     }
     // Remove all the price components on discount line items, if the unit price
     // is still == 0 after evaluating order discount rules, the discount line
-    // item will be deleted (See commerce_discount_commerce_cart_order_refresh()).
-    elseif ($line_item->type == 'commerce_discount') {
-      // There's no need to save the discount line item here, during the refresh
-      // process, if the discount line item is still applicable it'll be saved,
-      // otherwise it'll be deleted, once the discount price components are
-      // removed on the line item, we need to make sure the components are
-      // also removed from the order total.
+    // item will be deleted.
+    if ($line_item_wrapper->getBundle() == 'commerce_discount') {
       $line_item_wrapper->commerce_unit_price = $empty_price;
       $line_item_wrapper->commerce_total = $empty_price;
-      $recalculate_order_total = TRUE;
       continue;
     }
-    elseif ($line_item->type == 'shipping') {
+    // Remove product_discount line items each time we refresh the order,
+    // we don't know in advance if "free bonus product" rules are still
+    // applicable, if they're, a new line item is going to be recreated when
+    // the "commerce_discount_order" rules event is fired.
+    elseif ($line_item_wrapper->getBundle() == 'product_discount') {
+      $order_wrapper->commerce_line_items->offsetUnset($delta);
+      $line_items_to_delete[] = $line_item_wrapper->getIdentifier();
+      continue;
+    }
+    elseif ($line_item_wrapper->getBundle() == 'shipping') {
       $changed = commerce_discount_remove_discount_components($line_item_wrapper->commerce_unit_price);
       if ($changed) {
         // Since we're saving the line item, there's no need to manually
         // update the line item's total since that'll be done in the controller.
         $line_item_wrapper->save();
-        $recalculate_order_total = TRUE;
       }
     }
   }
 
-  // If we have line items to delete, proceed with deletion and re-key the
-  // order line items reference field.
-  if ($line_items_to_delete) {
-    $order->commerce_line_items[LANGUAGE_NONE] = array_values($order->commerce_line_items[LANGUAGE_NONE]);
-    commerce_line_item_delete_multiple($line_items_to_delete, TRUE);
-    $recalculate_order_total = TRUE;
-  }
-
-  // If some referenced line items were deleted, or if some discount components
-  // were removed, we need to recalculate the order total.
-  if ($recalculate_order_total) {
-    commerce_order_calculate_total($order);
-  }
-}
-
-/**
- * Implements hook_commerce_cart_order_refresh().
- */
-function commerce_discount_commerce_cart_order_refresh($order_wrapper) {
-  $line_items_to_delete = array();
   // We need to make sure the order total is correct before evaluating discount
   // rules, order total may not be correct when our refresh implementation is
   // invoked.
