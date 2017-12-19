@@ -38,7 +38,7 @@ function commerce_discount_commerce_cart_order_pre_refresh($order) {
   if (!$line_item_ids) {
     return;
   }
-  // Boolean indicating if the order needs to be recalculated.
+  // Boolean indicating if the order total needs to be recalculated.
   $recalculate_order_total = FALSE;
   $line_items = commerce_line_item_load_multiple($line_item_ids);
   $line_items_to_delete = array();
@@ -57,9 +57,9 @@ function commerce_discount_commerce_cart_order_pre_refresh($order) {
   // we want to remove all price components present on discount line items such
   // as VAT, the discount price component itself etc.
   $empty_price = commerce_discount_empty_price($currency_code);
-  $discount_types = commerce_discount_types();
-  $discount_types = array_keys($discount_types);
 
+  // The discount price components for product line items are not removed
+  // inside that loop, that is done via a product pricing rule.
   foreach ($line_items as $line_item) {
     $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
     // Remove product_discount line items each time we refresh the order,
@@ -72,17 +72,28 @@ function commerce_discount_commerce_cart_order_pre_refresh($order) {
       unset($order->commerce_line_items[LANGUAGE_NONE][$delta]);
       continue;
     }
+    // Remove all the price components on discount line items, if the unit price
+    // is still == 0 after evaluating order discount rules, the discount line
+    // item will be deleted (See commerce_discount_commerce_cart_order_refresh()).
     elseif ($line_item->type == 'commerce_discount') {
+      // There's no need to save the discount line item here, during the refresh
+      // process, if the discount line item is still applicable it'll be saved,
+      // otherwise it'll be deleted, once the discount price components are
+      // removed on the line item, we need to make sure the components are
+      // also removed from the order total.
       $line_item_wrapper->commerce_unit_price = $empty_price;
       $line_item_wrapper->commerce_total = $empty_price;
       $recalculate_order_total = TRUE;
       continue;
     }
-    $changed = commerce_discount_remove_discount_components($line_item_wrapper->commerce_unit_price, $discount_types);
-    $changed = $changed || commerce_discount_remove_discount_components($line_item_wrapper->commerce_total, $discount_types);
-    if ($changed) {
-      $line_item_wrapper->save();
-      $recalculate_order_total = TRUE;
+    elseif ($line_item->type == 'shipping') {
+      $changed = commerce_discount_remove_discount_components($line_item_wrapper->commerce_unit_price);
+      if ($changed) {
+        // Since we're saving the line item, there's no need to manually
+        // update the line item's total since that'll be done in the controller.
+        $line_item_wrapper->save();
+        $recalculate_order_total = TRUE;
+      }
     }
   }
 
@@ -92,12 +103,6 @@ function commerce_discount_commerce_cart_order_pre_refresh($order) {
     $order->commerce_line_items[LANGUAGE_NONE] = array_values($order->commerce_line_items[LANGUAGE_NONE]);
     commerce_line_item_delete_multiple($line_items_to_delete, TRUE);
     $recalculate_order_total = TRUE;
-  }
-
-  // Remove discount components from the order total.
-  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-  if (isset($order_wrapper->commerce_order_total)) {
-    commerce_discount_remove_discount_components($order_wrapper->commerce_order_total);
   }
 
   // If some referenced line items were deleted, or if some discount components

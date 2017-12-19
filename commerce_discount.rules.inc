@@ -348,6 +348,18 @@ function commerce_discount_rules_action_info() {
     );
   }
 
+  $items['commerce_discount_remove_discount_components_on_products'] = array(
+    'label' => t('Remove discount price components'),
+    'group' => t('Commerce Discount'),
+    'parameter' => array(
+      'commerce_line_item' => array(
+        'type' => 'commerce_line_item',
+        'label' => t('Line item'),
+        'wrapped' => TRUE,
+      ),
+    ),
+  );
+
   $items['commerce_discount_shipping_service'] = array(
     'label' => t('Apply shipping discount'),
     'group' => t('Commerce Discount'),
@@ -1588,4 +1600,12 @@ function commerce_discount_date_condition($discount_name) {
   $end_date_timestamp = $end_date->getTimestamp();
 
   return $time >= $start_date_timestamp && $time <= $end_date_timestamp;
+}
+
+/**
+ * Rules action: Remove discount components on product line items.
+ */
+function commerce_discount_remove_discount_components_on_products($line_item_wrapper) {
+  commerce_discount_remove_discount_components($line_item_wrapper->commerce_unit_price, array('product_discount'));
+  commerce_discount_remove_discount_components($line_item_wrapper->total, array('product_discount'));
 }
