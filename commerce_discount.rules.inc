@@ -1607,5 +1607,5 @@ function commerce_discount_date_condition($discount_name) {
  */
 function commerce_discount_remove_discount_components_on_products($line_item_wrapper) {
   commerce_discount_remove_discount_components($line_item_wrapper->commerce_unit_price, array('product_discount'));
-  commerce_discount_remove_discount_components($line_item_wrapper->total, array('product_discount'));
+  commerce_discount_remove_discount_components($line_item_wrapper->commerce_total, array('product_discount'));
 }
