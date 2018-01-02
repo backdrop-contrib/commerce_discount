@@ -1606,6 +1606,10 @@ function commerce_discount_date_condition($discount_name) {
  * Rules action: Remove discount components on product line items.
  */
 function commerce_discount_remove_discount_components_on_products($line_item_wrapper) {
+  // Skip unsaved line items.
+  if (!$line_item_wrapper->getIdentifier()) {
+    return;
+  }
   commerce_discount_remove_discount_components($line_item_wrapper->commerce_unit_price, array('product_discount'));
   commerce_discount_remove_discount_components($line_item_wrapper->commerce_total, array('product_discount'));
 }

@@ -23,6 +23,8 @@ function commerce_discount_default_rules_configuration() {
   // Remove discount price components on product line items, prior to evaluating
   // product discount rules.
   $rule = rules_reaction_rule();
+
+  $rule->label = t('Remove discount price components on product line items');
   $rule->active = TRUE;
   $rule->weight = -100;
   $rule
