@@ -902,8 +902,7 @@ function commerce_discount_fixed_amount(EntityDrupalWrapper $wrapper, $discount_
         $discount_price['amount'] = -$order_amount;
       }
 
-      $delta = $wrapper->commerce_discounts->count();
-      $order->commerce_discounts[LANGUAGE_NONE][$delta]['target_id'] = $discount_wrapper->discount_id->value();
+      $order->commerce_discounts[LANGUAGE_NONE][]['target_id'] = $discount_wrapper->discount_id->value();
 
       // Modify the existing discount line item or add a new one if that fails.
       if (!commerce_discount_set_existing_line_item_price($wrapper, $discount_name, $discount_price)) {
@@ -963,8 +962,7 @@ function commerce_discount_percentage(EntityDrupalWrapper $wrapper, $discount_na
       // Set reference to the discount.
       // @todo: It doesn't work with the wrapper.
       $order = $wrapper->value();
-      $delta = $wrapper->commerce_discounts->count();
-      $order->commerce_discounts[LANGUAGE_NONE][$delta]['target_id'] = $discount_wrapper->discount_id->value();
+      $order->commerce_discounts[LANGUAGE_NONE][]['target_id'] = $discount_wrapper->discount_id->value();
 
       $calculated_discount = 0;
       // Loop the line items of the order and calculate the total discount.
@@ -1262,8 +1260,7 @@ function commerce_discount_free_products(EntityDrupalWrapper $wrapper, $discount
 
   // Set reference to the discount.
   $order = $wrapper->value();
-  $delta = $wrapper->commerce_discounts->count();
-  $order->commerce_discounts[LANGUAGE_NONE][$delta]['target_id'] = $discount_wrapper->discount_id->value();
+  $order->commerce_discounts[LANGUAGE_NONE][]['target_id'] = $discount_wrapper->discount_id->value();
 
   // Loop on products and add each product to order line items.
   foreach ($products as $product) {
