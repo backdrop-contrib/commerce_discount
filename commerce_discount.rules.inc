@@ -1460,6 +1460,7 @@ function commerce_discount_set_price_component(EntityDrupalWrapper $line_item_wr
     return;
   }
 
+  $discount_amount['amount'] = commerce_round(COMMERCE_ROUND_HALF_UP, $discount_amount['amount']);
   $discount_amount['data'] = array(
     'discount_name' => $discount_name,
     'discount_component_title' => empty($component_title) ? 'discount' : $component_title,
