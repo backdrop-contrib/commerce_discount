@@ -714,6 +714,8 @@ function commerce_discount_install_helper() {
     );
     field_create_instance($instance);
   }
+  // Update properties of product_discount bundle.
+  commerce_line_item_configure_line_item_fields(array('commerce_discount'));
 }
 
 /**
