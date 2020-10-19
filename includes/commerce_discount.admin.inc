@@ -250,7 +250,7 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
   $date_field_types = array('date', 'datestamp', 'datetime');
   foreach (element_get_visible_children($form['commerce_discount_fields']) as $field_name) {
     $field = field_info_field($field_name);
-    if ($field_name == 'commerce_discount_offer' || in_array($field['type'], $date_field_types)) {
+    if ($field_name == 'commerce_discount_offer' || !isset($field['type']) || in_array($field['type'], $date_field_types)) {
       continue;
     }
 
