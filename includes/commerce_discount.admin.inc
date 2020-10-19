@@ -476,7 +476,7 @@ function commerce_discount_date_combo_process_alter(&$element, &$form_state, $co
  * Implements hook_date_popup_process_alter().
  */
 function commerce_discount_date_popup_process_alter(&$element, &$form_state, $context) {
-  if ($element['#field']['field_name'] == 'commerce_discount_date') {
+  if (isset($element['#field']) && $element['#field']['field_name'] == 'commerce_discount_date') {
     // Date-clear.
     unset($element['#attributes']['class']);
     array_shift($element['#wrapper_attributes']['class']);
