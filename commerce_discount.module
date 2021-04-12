@@ -1242,7 +1242,7 @@ function commerce_discount_usage_get_usage($discount_name, $exclude_order_id = F
     $query->condition('g.order_id', $exclude_order_id, '<>');
   }
 
-  return $query->execute()->rowCount();
+  return (int) $query->countQuery()->execute()->fetchField();
 }
 
 /**
