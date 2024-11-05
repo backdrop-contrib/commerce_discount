@@ -9,6 +9,23 @@
  */
 
 /**
+ * Implements hook_autoload_info().
+ */
+function commerce_discount_autoload_info() {
+  return array(
+    'CommerceDiscountMetadataController' => 'commerce_discount.info.inc',
+    'CommerceDiscountUIController' => 'includes/commerce_discount.admin.inc',
+    'CommerceDiscount' => 'includes/commerce_discount.class.inc',
+    'CommerceDiscountControllerExportable' => 'includes/commerce_discount.controller.inc',
+    'CommerceDiscountOffer' => 'includes/commerce_discount_offer.class.inc',
+    'CommerceDiscountOfferInlineEntityFormController' => 'includes/commerce_discount_offer.inline_entity_form.inc',
+    'CommerceDiscountViewsController' => 'includes/views/commerce_discount.views.inc',
+    'commerce_discount_handler_field_commerce_discount_analytics' => 'includes/views/handlers/commerce_discount_handler_field_commerce_discount_analytics.inc',
+    'commerce_discount_handler_field_operations_dropbutton' => 'includes/views/handlers/commerce_discount_handler_field_operations_dropbutton.inc',
+  );
+}
+
+/**
  * Implements hook_commerce_cart_order_refresh().
  */
 function commerce_discount_commerce_cart_order_refresh($order_wrapper) {
@@ -126,7 +143,7 @@ function commerce_discount_remove_discount_components($price_wrapper, $discount_
       // other modules to say whether it gets reset. This is so that discounts
       // can apply against a price that has been stripped of components from
       // modules that need to apply against a post-discount price.
-      drupal_alter('commerce_discount_remove_price_component', $component, $remove);
+      backdrop_alter('commerce_discount_remove_price_component', $component, $remove);
     }
 
     if ($remove) {
@@ -269,7 +286,7 @@ function commerce_discount_permission() {
 function commerce_discount_views_api($module, $api) {
   return array(
     'version' => 3,
-    'path' => drupal_get_path('module', 'commerce_discount') . '/includes/views',
+    'path' => backdrop_get_path('module', 'commerce_discount') . '/includes/views',
   );
 }
 
@@ -336,7 +353,7 @@ function commerce_discount_form_commerce_discount_form_alter(&$form, $form_state
 
   $rule = rules_config_load('commerce_discount_rule_' . $form_state['commerce_discount']->name);
   if ($rule && $rule->hasStatus(ENTITY_OVERRIDDEN)) {
-    drupal_set_message(t('The rule associated with this discount is overridden, making it impossible to edit the discount.'), 'warning');
+    backdrop_set_message(t('The rule associated with this discount is overridden, making it impossible to edit the discount.'), 'warning');
     $form['actions']['submit']['#disabled'] = TRUE;
   }
 }
@@ -452,7 +469,7 @@ function _commerce_discount_rebuild_rules_config(array $discounts) {
     $entities[$name] = $entity;
     $existing_rules_config = TRUE;
   }
-  drupal_alter($hook, $entities);
+  backdrop_alter($hook, $entities);
 
   // Check for defaults that disappeared or overridden?
   if (!$existing_rules_config) {
@@ -581,6 +598,7 @@ function commerce_discount_commerce_discount_type_info() {
  */
 function commerce_discount_commerce_discount_offer_type_info() {
   $types = array();
+  // TODO This variable was probably removed in Backdrop without replacement.
   $types['fixed_amount'] = array(
     'label' => t('@currency off', array('@currency' => commerce_currency_get_symbol(variable_get('commerce_default_currency', 'USD')))),
     'action' => 'commerce_discount_fixed_amount',
@@ -697,7 +715,7 @@ function commerce_discount_commerce_discount_rule_build($rule, $discount) {
  *   The array of types, keyed by type name.
  */
 function commerce_discount_types() {
-  $discount_types = &drupal_static(__FUNCTION__);
+  $discount_types = &backdrop_static(__FUNCTION__);
 
   if (!isset($discount_types)) {
     $discount_types = array();
@@ -713,7 +731,7 @@ function commerce_discount_types() {
     }
 
     // Allow the type info to be altered by other modules.
-    drupal_alter('commerce_discount_type_info', $discount_types);
+    backdrop_alter('commerce_discount_type_info', $discount_types);
   }
 
   return $discount_types;
@@ -774,7 +792,7 @@ function commerce_discount_type_get_name($type = NULL) {
  *   The array of types, keyed by type name.
  */
 function commerce_discount_offer_types() {
-  $offer_types = &drupal_static(__FUNCTION__);
+  $offer_types = &backdrop_static(__FUNCTION__);
 
   if (!isset($offer_types)) {
     $offer_types = array();
@@ -790,7 +808,7 @@ function commerce_discount_offer_types() {
     }
 
     // Allow the type info to be altered by other modules.
-    drupal_alter('commerce_discount_offer_type_info', $offer_types);
+    backdrop_alter('commerce_discount_offer_type_info', $offer_types);
   }
 
   return $offer_types;
@@ -849,7 +867,7 @@ function commerce_discount_offer_type_get_name($type = NULL) {
  */
 function commerce_discount_entity_list() {
   $options = array();
-  foreach (entity_load('commerce_discount') as $discount) {
+  foreach (entity_load_multiple_by_name('commerce_discount') as $discount) {
     $options[$discount->name] = $discount->label;
   }
 
@@ -892,7 +910,7 @@ function commerce_discount_commerce_line_item_type_info() {
  *   The line item title.
  */
 function commerce_discount_line_item_title($line_item) {
-  $discount = entity_load_single('commerce_discount', $line_item->data['discount_name']);
+  $discount = entity_load('commerce_discount', $line_item->data['discount_name']);
 
   if (is_object($discount) && !empty($discount->component_title)) {
     return check_plain($discount->component_title);
@@ -1009,7 +1027,7 @@ function commerce_discount_get_discounts_applied_to_price($price, $type = '') {
     if (strpos($component['name'], 'discount|') === 0) {
       // Load the discount entity represented by this component.
       $applied_discount_name = substr($component['name'], 9);
-      $applied_discount = entity_load_single('commerce_discount', $applied_discount_name);
+      $applied_discount = entity_load('commerce_discount', $applied_discount_name);
 
       // Add it to the list of applied discounts keyed by ID to prevent
       // duplicates.
@@ -1075,7 +1093,7 @@ function commerce_discount_get_free_shipping_strategy($discount) {
  *   Return the number of usage by mail.
  */
 function commerce_discount_usage_get_usage_by_mail($discount_name, $mail, $exclude_order_id = FALSE) {
-  $usage = &drupal_static(__FUNCTION__, array());
+  $usage = &backdrop_static(__FUNCTION__, array());
 
   if (!isset($usage[$mail])) {
     $usage[$mail] = array();
@@ -1203,7 +1221,7 @@ function commerce_discount_usage_record_order_usage($order) {
       'mail' => $order->mail ? $order->mail : '',
       'order_id' => $order->order_id,
     );
-    drupal_write_record('commerce_discount_usage', $record);
+    backdrop_write_record('commerce_discount_usage', $record);
   }
 }
 
@@ -1248,7 +1266,7 @@ function commerce_discount_usage_get_usage($discount_name, $exclude_order_id = F
 /**
  * Deletes the first discount line item on an order matching by discount name.
  *
- * @param EntityDrupalWrapper $order_wrapper
+ * @param EntityBackdropWrapper $order_wrapper
  *   The wrapped order entity.
  * @param string $discount_name
  *   The name of the discount whose line item should be deleted.

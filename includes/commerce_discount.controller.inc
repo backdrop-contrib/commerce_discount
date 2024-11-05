@@ -8,7 +8,7 @@
 /**
  * Controller for discount entities; Overrides CRUD operations.
  */
-class CommerceDiscountControllerExportable extends EntityAPIControllerExportable {
+class CommerceDiscountControllerExportable extends EntityPlusControllerExportable {
 
   /**
    * {@inheritdoc}
@@ -31,7 +31,7 @@ class CommerceDiscountControllerExportable extends EntityAPIControllerExportable
     if ($this->nameKey != $this->idKey) {
       unset($vars[$this->idKey]);
     }
-    return entity_var_json_export($vars, $prefix);
+    return entity_plus_var_json_export($vars, $prefix);
   }
 
   /**
@@ -79,7 +79,7 @@ class CommerceDiscountControllerExportable extends EntityAPIControllerExportable
     parent::delete($ids, $transaction);
 
     // Rebuild rules config.
-    entity_defaults_rebuild(array('rules_config'));
+    entity_plus_defaults_rebuild(array('rules_config'));
   }
 
 }

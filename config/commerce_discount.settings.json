@@ -1,0 +1,6 @@
+{
+    "_config_name": "commerce_discount.settings",
+    "commerce_discount_line_item_types": [
+        "product_discount"
+    ]
+}

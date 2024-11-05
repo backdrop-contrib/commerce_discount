@@ -60,7 +60,7 @@ class CommerceDiscountUIController extends EntityDefaultUIController {
       'access callback' => 'entity_access',
       'access arguments' => array('view', $this->entityType),
       'file' => 'includes/commerce_discount.admin.inc',
-      'file path' => drupal_get_path('module', 'commerce_discount'),
+      'file path' => backdrop_get_path('module', 'commerce_discount'),
     );
     $items[$this->path . '/list'] = array(
       'title' => 'List',
@@ -76,19 +76,19 @@ class CommerceDiscountUIController extends EntityDefaultUIController {
     $items[$this->path . '/settings'] = array(
       'title' => 'Settings',
       'description' => 'Additional settings for Commerce Discounts.',
-      'page callback' => 'drupal_get_form',
+      'page callback' => 'backdrop_get_form',
       'page arguments' => array('commerce_discount_settings'),
       'access arguments' => array('administer commerce discounts'),
       'type' => MENU_LOCAL_TASK,
       'file' => 'includes/commerce_discount.admin.inc',
-      'file path' => drupal_get_path('module', 'commerce_discount'),
+      'file path' => backdrop_get_path('module', 'commerce_discount'),
     );
 
     if (module_exists('rules_admin')) {
       $items[$this->path . '/rules'] = array(
         'title' => 'Discount rules',
         'description' => 'Manage discount rules',
-        'page callback' => 'drupal_goto',
+        'page callback' => 'backdrop_goto',
         'page arguments' => array(
           'admin/config/workflow/rules',
           array(
@@ -116,7 +116,7 @@ function commerce_discount_overview_form() {
   $view = views_get_view('commerce_discount_overview');
   $view->override_url = $_GET['q'];
   $form['view'] = array('#markup' => $view->preview());
-  $form['#attached']['css'][] = drupal_get_path('module', 'commerce_discount') . '/css/commerce_discount.css';
+  $form['#attached']['css'][] = backdrop_get_path('module', 'commerce_discount') . '/css/commerce_discount.css';
 
   return $form;
 }
@@ -125,9 +125,9 @@ function commerce_discount_overview_form() {
  * Form callback: create or edit a discount.
  *
  * @param array $form
- *   Standard Drupal $form.
+ *   Standard Backdrop $form.
  * @param array $form_state
- *   Standard Drupal $form_state.
+ *   Standard Backdrop $form_state.
  * @param CommerceDiscount $commerce_discount
  *   Commerce discount object.
  * @param string $op
@@ -159,7 +159,7 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
   $form['component_title'] = array(
     '#title' => t('Name'),
     '#type' => 'textfield',
-    '#default_value' => empty($commerce_discount->component_title) ? t('Discount') : $commerce_discount->component_title,
+    '#default_value' => empty($commerce_discount->component_title)?t('Discount') : $commerce_discount->component_title,
     '#description' => t('Shown to customers. Defaults to "Discount".'),
   );
 
@@ -167,7 +167,7 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
   $form['name'] = array(
     '#type' => 'machine_name',
     // Strip the 'discount_' prefix from the beginning of the string.
-    '#default_value' => isset($commerce_discount->name) ? substr($commerce_discount->name, 9) : '',
+    '#default_value' => isset($commerce_discount->name)?substr($commerce_discount->name, 9) : '',
     '#disabled' => $commerce_discount->hasStatus(ENTITY_IN_CODE),
     '#machine_name' => array(
       'exists' => '_commerce_discount_name_exists',
@@ -237,7 +237,7 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
     '#parents' => array('sort_order'),
     '#title' => t('Sort order'),
     '#description' => t('Discounts will be sorted by this value to be evaluated in that order.'),
-    '#options' => drupal_map_assoc(range(1, 21)),
+    '#options' => backdrop_map_assoc(range(1, 21)),
     '#default_value' => !empty($commerce_discount->sort_order) ? $commerce_discount->sort_order : 10,
   );
 
@@ -282,7 +282,7 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
 
   $title = t('Compatibility with other %name', array('%name' => $discount_type_name));
   $form['commerce_discount_fields']['commerce_compatibility_strategy'][LANGUAGE_NONE]['#title'] = $title;
-  $form['commerce_discount_fields']['commerce_compatibility_strategy'][LANGUAGE_NONE]['#description'] = $description . '<br />' . t('For more information, refer to the discount compatibility !link on drupal.org.', array('!link' => '<a href="https://www.drupal.org/node/2917774" target="_blank">' . t('documentation page') . '</a>'));;
+  $form['commerce_discount_fields']['commerce_compatibility_strategy'][LANGUAGE_NONE]['#description'] = $description . '<br />' . t('For more information, refer to the discount compatibility !link on drupal.org.', array('!link' => '<a href="https://www.drupal.org/node/2917774" target="_blank">' . t('documentation page') . '</a>'));
 
   // Ensure the compatibility strategy field has a default value.
   if (empty($form['commerce_discount_fields']['commerce_compatibility_strategy'][LANGUAGE_NONE]['#default_value'])) {
@@ -347,8 +347,8 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
   );
 
   // Add assets.
-  $form['#attached']['js'][] = drupal_get_path('module', 'commerce_discount') . '/js/commerce_discount.js';
-  $form['#attached']['css'][] = drupal_get_path('module', 'commerce_discount') . '/css/commerce_discount.css';
+  $form['#attached']['js'][] = backdrop_get_path('module', 'commerce_discount') . '/js/commerce_discount.js';
+  $form['#attached']['css'][] = backdrop_get_path('module', 'commerce_discount') . '/css/commerce_discount.css';
   $form['#attributes']['class'][] = 'commerce-discount-form';
 
   return $form;
@@ -428,10 +428,11 @@ function _commerce_discount_name_exists($value) {
 function commerce_discount_settings() {
   $types = commerce_line_item_type_get_name();
   unset($types['commerce_discount']);
+  $form['#config'] = 'commerce_discount.settings';
   $form['commerce_discount_line_item_types'] = array(
     '#type' => 'checkboxes',
     '#title' => t('Line item types to use for discounts'),
-    '#default_value' => variable_get('commerce_discount_line_item_types', array_diff(commerce_product_line_item_types(), array('product_discount'))),
+    '#default_value' => config_get('commerce_discount.settings', 'commerce_discount_line_item_types'),
     '#options' => $types,
     '#description' => t('Select the line item types that will be taken into account for calculating the discount amounts in percentage offers.'),
   );

@@ -401,7 +401,7 @@ function commerce_discount_rules_event_info() {
   $items['commerce_discount_order'] = array(
     'label' => t('Apply a discount to a given order'),
     'group' => t('Commerce Discount'),
-    'variables' => entity_rules_events_variables('commerce_order', t('Order', array(), array('context' => 'a drupal commerce order'))),
+    'variables' => entity_rules_events_variables('commerce_order', t('Order', array(), array('context' => 'a backdrop commerce order'))),
     'access callback' => 'commerce_order_rules_access',
   );
 
@@ -412,7 +412,7 @@ function commerce_discount_rules_event_info() {
  * Rules callback: executes the "Check discount compatibility at the order
  * level" condition.
  *
- * @param EntityDrupalWrapper $order_wrapper
+ * @param EntityBackdropWrapper $order_wrapper
  *   The order the discount would be applied to.
  * @param string $discount_name
  *   The discount name whose compatibility needs to be checked.
@@ -420,7 +420,7 @@ function commerce_discount_rules_event_info() {
  * @return bool
  *   Returns TRUE if nothing has disqualified compatibility.
  */
-function commerce_discount_compatibility_check(EntityDrupalWrapper $order_wrapper, $discount_name) {
+function commerce_discount_compatibility_check(EntityBackdropWrapper $order_wrapper, $discount_name) {
   // Ensure the discount we're loading still exists.
   if (!$discount = entity_load_single('commerce_discount', $discount_name)) {
     return FALSE;
@@ -436,7 +436,7 @@ function commerce_discount_compatibility_check(EntityDrupalWrapper $order_wrappe
  * Rules callback: executes the "Check discount compatibility at the line item
  * level" condition.
  *
- * @param EntityDrupalWrapper $line_item_wrapper
+ * @param EntityBackdropWrapper $line_item_wrapper
  *   The line item the discount would be applied to.
  * @param string $discount_name
  *   The discount name whose compatibility needs to be checked.
@@ -444,7 +444,7 @@ function commerce_discount_compatibility_check(EntityDrupalWrapper $order_wrappe
  * @return bool
  *   Returns TRUE if nothing has disqualified compatibility.
  */
-function commerce_discount_line_item_compatibility_check(EntityDrupalWrapper $line_item_wrapper, $discount_name) {
+function commerce_discount_line_item_compatibility_check(EntityBackdropWrapper $line_item_wrapper, $discount_name) {
   // Ensure the discount we're loading still exists.
   if (!$discount = entity_load_single('commerce_discount', $discount_name)) {
     return FALSE;
@@ -554,20 +554,20 @@ function _commerce_discount_check_compatibility($discount, $price) {
  * Options list for commerce_order_compare_order_amount line item types.
  */
 function commerce_order_compare_order_amount_options_list() {
-  return array_diff_key(commerce_line_item_type_options_list(), drupal_map_assoc(array('commerce_discount', 'product_discount')));
+  return array_diff_key(commerce_line_item_type_options_list(), backdrop_map_assoc(array('commerce_discount', 'product_discount')));
 }
 
 /**
  * Default value array for commerce_order_compare_order_amount line item types.
  */
 function commerce_order_compare_order_amount_options_default() {
-  return drupal_map_assoc(array_keys(commerce_order_compare_order_amount_options_list()));
+  return backdrop_map_assoc(array_keys(commerce_order_compare_order_amount_options_list()));
 }
 
 /**
  * Build callback for commerce_order_compare_order_amount.
  *
- * @param EntityDrupalWrapper $wrapper
+ * @param EntityBackdropWrapper $wrapper
  *   The wrapped entity given by the rule.
  * @param string $operator
  *   The comparison operator.
@@ -577,7 +577,7 @@ function commerce_order_compare_order_amount_options_default() {
  * @return bool
  *   return true if condition is valid. false otherwise.
  */
-function commerce_order_compare_order_amount_build(EntityDrupalWrapper $wrapper, $operator, $total, $line_item_types) {
+function commerce_order_compare_order_amount_build(EntityBackdropWrapper $wrapper, $operator, $total, $line_item_types) {
   $total_order = 0;
 
   // Ensure the discount currency code is the same as the order.
@@ -630,15 +630,15 @@ function commerce_order_compare_order_amount_build(EntityDrupalWrapper $wrapper,
 /**
  * Build callback for commerce_order_has_owner.
  *
- * @param EntityDrupalWrapper $wrapper
+ * @param EntityBackdropWrapper $wrapper
  *   The wrapped entity given by the rule.
  * @param array $account
- *   A fully loaded drupal user.
+ *   A fully loaded backdrop user.
  *
  * @return bool
  *   Returns true if condition is valid. false otherwise.
  */
-function commerce_order_has_owner_build(EntityDrupalWrapper $wrapper, $account) {
+function commerce_order_has_owner_build(EntityBackdropWrapper $wrapper, $account) {
   if (isset($account->uid)) {
     // If current logged user matches the discount related users.
     return $account->uid == $wrapper->uid->value();
@@ -650,7 +650,7 @@ function commerce_order_has_owner_build(EntityDrupalWrapper $wrapper, $account) 
 /**
  * Build callback for commerce_order_contains_products.
  *
- * @param EntityDrupalWrapper $wrapper
+ * @param EntityBackdropWrapper $wrapper
  *   The wrapped entity given by the rule.
  * @param string $products
  *   A list of products SKU.
@@ -660,7 +660,7 @@ function commerce_order_has_owner_build(EntityDrupalWrapper $wrapper, $account) 
  * @return bool
  *   Returns True if condition is valid. False otherwise.
  */
-function commerce_order_contains_products_build(EntityDrupalWrapper $wrapper, $products, $operator = 'any') {
+function commerce_order_contains_products_build(EntityBackdropWrapper $wrapper, $products, $operator = 'any') {
   // Split by comma. Allow some grace for spaces.
   $products_sku = explode(', ', (string) $products);
   $order_skus = array();
@@ -708,7 +708,7 @@ function commerce_order_contains_products_build(EntityDrupalWrapper $wrapper, $p
 /**
  * Build callback for commerce_product_has_type.
  *
- * @param EntityDrupalWrapper $wrapper
+ * @param EntityBackdropWrapper $wrapper
  *   Wrapped entity type given by the rule.
  * @param string $type
  *   Product type returned by rule condition.
@@ -716,7 +716,7 @@ function commerce_order_contains_products_build(EntityDrupalWrapper $wrapper, $p
  * @return bool
  *   True if condition is valid. false otherwise.
  */
-function commerce_product_has_type_build(EntityDrupalWrapper $wrapper, $type) {
+function commerce_product_has_type_build(EntityBackdropWrapper $wrapper, $type) {
   // Only for Line items with Product reference field.
   if (in_array('commerce_product', array_keys($wrapper->getPropertyInfo()))) {
     return ($wrapper->commerce_product->type->value() == $type);
@@ -730,7 +730,7 @@ function commerce_product_has_type_build(EntityDrupalWrapper $wrapper, $type) {
  * Checks if every order line item match the quantity comparison defined in the
  * rule settings.
  *
- * @param EntityDrupalWrapper $wrapper
+ * @param EntityBackdropWrapper $wrapper
  *   Wrapped entity given by the rule.
  * @param string $products
  *   A list of products SKU.
@@ -742,7 +742,7 @@ function commerce_product_has_type_build(EntityDrupalWrapper $wrapper, $type) {
  * @return bool
  *   True if the condition is valid. False otherwise.
  */
-function commerce_order_has_specific_quantity_products_build(EntityDrupalWrapper $wrapper, $products, $operator, $quantity) {
+function commerce_order_has_specific_quantity_products_build(EntityBackdropWrapper $wrapper, $products, $operator, $quantity) {
   $products_sku = explode(', ', (string) $products);
   // Loop on order line items to check if each product has the quantity
   // specified in the rule settings.
@@ -809,7 +809,7 @@ function commerce_order_has_specific_quantity_products_build(EntityDrupalWrapper
 /**
  * Build callback for commerce_product_contains_products.
  *
- * @param EntityDrupalWrapper $wrapper
+ * @param EntityBackdropWrapper $wrapper
  *   Wrapped entity type given by the rule.
  * @param string $sku
  *   Product sku(s) returned by rule condition.
@@ -817,7 +817,7 @@ function commerce_order_has_specific_quantity_products_build(EntityDrupalWrapper
  * @return bool
  *   True if condition is valid. false otherwise.
  */
-function commerce_product_contains_products_build(EntityDrupalWrapper $wrapper, $sku) {
+function commerce_product_contains_products_build(EntityBackdropWrapper $wrapper, $sku) {
   // Only for Line items with Product reference field.
   if (in_array('commerce_product', array_keys($wrapper->getPropertyInfo()))) {
     return in_array($wrapper->commerce_product->sku->value(), array_map('trim', explode(',', $sku)));
@@ -829,7 +829,7 @@ function commerce_product_contains_products_build(EntityDrupalWrapper $wrapper, 
 /**
  * Build callback for commerce_product_has_specified_terms on product.
  *
- * @param EntityDrupalWrapper $wrapper
+ * @param EntityBackdropWrapper $wrapper
  *   Wrapped entity type given by the rule.
  * @param array $terms
  *   Values for the condition settings.
@@ -837,7 +837,7 @@ function commerce_product_contains_products_build(EntityDrupalWrapper $wrapper, 
  * @return bool
  *   True is condition is valid. false otherwise.
  */
-function commerce_product_has_specified_terms_build(EntityDrupalWrapper $wrapper, $terms) {
+function commerce_product_has_specified_terms_build(EntityBackdropWrapper $wrapper, $terms) {
   $terms_name = explode(', ', $terms);
 
   if (in_array('commerce_product', array_keys($wrapper->getPropertyInfo()))) {
@@ -875,13 +875,13 @@ function commerce_discount_line_item_added_by_discount($line_item) {
 /**
  * Rules action: Apply fixed amount discount.
  */
-function commerce_discount_fixed_amount(EntityDrupalWrapper $wrapper, $discount_name) {
+function commerce_discount_fixed_amount(EntityBackdropWrapper $wrapper, $discount_name) {
   $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount_name);
   $discount_price = $discount_wrapper->commerce_discount_offer->commerce_fixed_amount->value();
   $discount_price['amount'] = -$discount_price['amount'];
 
   // Get the line item types to apply the discount to.
-  $line_item_types = variable_get('commerce_discount_line_item_types', array_diff(commerce_product_line_item_types(), array('product_discount')));
+  $line_item_types = config_get('commerce_discount.settings', 'commerce_discount_line_item_types');
 
   switch ($wrapper->type()) {
     case 'commerce_order':
@@ -942,11 +942,11 @@ function commerce_discount_fixed_amount(EntityDrupalWrapper $wrapper, $discount_
 /**
  * Rules action: Apply percentage discount.
  */
-function commerce_discount_percentage(EntityDrupalWrapper $wrapper, $discount_name) {
+function commerce_discount_percentage(EntityBackdropWrapper $wrapper, $discount_name) {
   $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount_name);
   $rate = $discount_wrapper->commerce_discount_offer->commerce_percentage->value() / 100;
   // Get the line item types to apply the discount to.
-  $line_item_types = variable_get('commerce_discount_line_item_types', array_diff(commerce_product_line_item_types(), array('product_discount')));
+  $line_item_types = config_get('commerce_discount.settings', 'commerce_discount_line_item_types');
   // Filter out 0 values in the variable.
   $line_item_types = array_filter($line_item_types);
 
@@ -1021,7 +1021,7 @@ function commerce_discount_percentage(EntityDrupalWrapper $wrapper, $discount_na
 /**
  * Rules action: Apply shipping discount.
  *
- * @param EntityDrupalWrapper $order_wrapper
+ * @param EntityBackdropWrapper $order_wrapper
  *   The wrapped order entity.
  * @param string $discount_name
  *   The name of the discount.
@@ -1030,13 +1030,13 @@ function commerce_discount_shipping_service($order_wrapper, $discount_name) {
   $order = $order_wrapper->value();
   // Shipping discount rules actions run on two occasions:
   // 1. When selecting the shipping service on checkout. This time
-  //   $order->shipping_rates is already set. The cart refresh is triggered
-  //   manually in commerce_discount_commerce_shipping_method_collect_rates()
-  //   and we don't save the shipping line items, since we create them only to
-  //   display the price.
+//   $order->shipping_rates is already set. The cart refresh is triggered
+//   manually in commerce_discount_commerce_shipping_method_collect_rates()
+//   and we don't save the shipping line items, since we create them only to
+//   display the price.
   // 2. On any other cart refresh the $order->shipping_rates is initially
-  //   empty so we set it to the shipping line item present on the order (if
-  //   any). In this case we want to save the shipping line item.
+//   empty so we set it to the shipping line item present on the order (if
+//   any). In this case we want to save the shipping line item.
   // What is common in the two cases is that we calculate the discount only
   // for the shipping services in $order->shipping_rates.
   // If the order hasn't had any shipping rates calculated for it, check if
@@ -1199,9 +1199,9 @@ function commerce_discount_shipping_service($order_wrapper, $discount_name) {
 /**
  * Helper function for the shipping discount rules action.
  *
- * @param EntityDrupalWrapper $line_item_wrapper
+ * @param EntityBackdropWrapper $line_item_wrapper
  *   The wrapped line item object to add the discount price component to.
- * @param EntityDrupalWrapper $order_wrapper
+ * @param EntityBackdropWrapper $order_wrapper
  *   The wrapped order entity.
  * @param string $discount_name
  *   The discount machine name.
@@ -1242,12 +1242,12 @@ function _commerce_discount_add_shipping_discount_price_component($line_item_wra
 /**
  * Rules action: Apply free bonus products discount.
  *
- * @param EntityDrupalWrapper $wrapper
+ * @param EntityBackdropWrapper $wrapper
  *   Wrapped commerce_order entity type.
  * @param string $discount_name
  *   The name of the discount.
  */
-function commerce_discount_free_products(EntityDrupalWrapper $wrapper, $discount_name) {
+function commerce_discount_free_products(EntityBackdropWrapper $wrapper, $discount_name) {
   $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount_name);
   if (!$products = $discount_wrapper->commerce_discount_offer->commerce_free_products->value()) {
     return;
@@ -1309,7 +1309,7 @@ function commerce_discount_free_products(EntityDrupalWrapper $wrapper, $discount
 
     // This covers use cases where the above logic is insufficient.
     $discount = $discount_wrapper->value();
-    drupal_alter('commerce_discount_free_product_context', $context, $product, $discount);
+    backdrop_alter('commerce_discount_free_product_context', $context, $product, $discount);
 
     $data = array('context' => $context);
     $line_item = commerce_product_line_item_new($product, 1, $order->order_id, $data, 'product_discount');
@@ -1336,7 +1336,7 @@ function commerce_discount_free_products(EntityDrupalWrapper $wrapper, $discount
 /**
  * Creates a discount line item on the provided order.
  *
- * @param EntityDrupalWrapper $order_wrapper
+ * @param EntityBackdropWrapper $order_wrapper
  *   The wrapped order entity.
  * @param string $discount_name
  *   The name of the discount being applied.
@@ -1349,7 +1349,7 @@ function commerce_discount_free_products(EntityDrupalWrapper $wrapper, $discount
  * @return object
  *   The newly created discount line item.
  */
-function commerce_discount_add_line_item(EntityDrupalWrapper $order_wrapper, $discount_name, $discount_amount, $data = array()) {
+function commerce_discount_add_line_item(EntityBackdropWrapper $order_wrapper, $discount_name, $discount_amount, $data = array()) {
   // Create a new line item.
   $discount_line_item = commerce_line_item_new('commerce_discount', $order_wrapper->getIdentifier());
   $discount_line_item->data = array('discount_name' => $discount_name) + $data;
@@ -1385,14 +1385,14 @@ function commerce_discount_add_line_item(EntityDrupalWrapper $order_wrapper, $di
 /**
  * Adds a discount price component to the provided line item.
  *
- * @param EntityDrupalWrapper $line_item_wrapper
+ * @param EntityBackdropWrapper $line_item_wrapper
  *   The wrapped line item entity.
  * @param string $discount_name
  *   The name of the discount being applied.
  * @param array $discount_amount
  *   The discount amount price array (amount, currency_code).
  */
-function commerce_discount_add_price_component(EntityDrupalWrapper $line_item_wrapper, $discount_name, $discount_amount) {
+function commerce_discount_add_price_component(EntityBackdropWrapper $line_item_wrapper, $discount_name, $discount_amount) {
   $unit_price = commerce_price_wrapper_value($line_item_wrapper, 'commerce_unit_price', TRUE);
   $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount_name);
   $component_title = $discount_wrapper->component_title->value();
@@ -1413,7 +1413,7 @@ function commerce_discount_add_price_component(EntityDrupalWrapper $line_item_wr
     'currency_code' => $discount_amount['currency_code'],
     'data' => array(
       'discount_name' => $discount_name,
-      'discount_component_title' => empty($component_title) ? t('Discount') : $component_title,
+      'discount_component_title' => empty($component_title)?t('Discount') : $component_title,
     ),
   );
 
@@ -1444,14 +1444,14 @@ function _commerce_discount_rules_product_match_options() {
 /**
  * Sets a discount price component to the provided line item.
  *
- * @param EntityDrupalWrapper $line_item_wrapper
+ * @param EntityBackdropWrapper $line_item_wrapper
  *   The wrapped line item entity.
  * @param string $discount_name
  *   The name of the discount being applied.
  * @param array $discount_amount
  *   The discount amount price array (amount, currency_code).
  */
-function commerce_discount_set_price_component(EntityDrupalWrapper $line_item_wrapper, $discount_name, $discount_amount) {
+function commerce_discount_set_price_component(EntityBackdropWrapper $line_item_wrapper, $discount_name, $discount_amount) {
   $unit_price = commerce_price_wrapper_value($line_item_wrapper, 'commerce_unit_price', TRUE);
   $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount_name);
   $component_title = $discount_wrapper->component_title->value();
@@ -1481,7 +1481,7 @@ function commerce_discount_set_price_component(EntityDrupalWrapper $line_item_wr
  * Will be updated only first discount line item.
  * Non-discount line items are ignored.
  *
- * @param EntityDrupalWrapper $order_wrapper
+ * @param EntityBackdropWrapper $order_wrapper
  *   The wrapped order entity.
  * @param string $discount_name
  *   The name of the discount being applied.
@@ -1491,7 +1491,7 @@ function commerce_discount_set_price_component(EntityDrupalWrapper $line_item_wr
  * @return object|bool
  *   The modified line item or FALSE if not found.
  */
-function commerce_discount_set_existing_line_item_price(EntityDrupalWrapper $order_wrapper, $discount_name, $discount_price) {
+function commerce_discount_set_existing_line_item_price(EntityBackdropWrapper $order_wrapper, $discount_name, $discount_price) {
   $modified_line_item = FALSE;
 
   foreach ($order_wrapper->commerce_line_items as $line_item_wrapper) {

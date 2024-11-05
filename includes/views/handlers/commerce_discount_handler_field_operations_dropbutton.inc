@@ -43,14 +43,14 @@ class commerce_discount_handler_field_operations_dropbutton extends views_handle
       $links[] = array(
         'href'  => $path . '/' . $commerce_discount->name . '/delete',
         'title' => t('delete'),
-        'query' => drupal_get_destination(),
+        'query' => backdrop_get_destination(),
       );
     }
     elseif (entity_has_status('commerce_discount', $commerce_discount, ENTITY_OVERRIDDEN)) {
       $links[] = array(
         'href'  => $path . '/' . $commerce_discount->name . '/revert',
         'title' => t('revert'),
-        'query' => drupal_get_destination(),
+        'query' => backdrop_get_destination(),
       );
     }
 

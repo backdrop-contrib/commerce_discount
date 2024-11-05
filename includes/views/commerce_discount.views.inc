@@ -8,7 +8,7 @@
 /**
  * Commerce discount entity Views definitions.
  */
-class CommerceDiscountViewsController extends EntityDefaultViewsController {
+class CommerceDiscountViewsController extends EntityPlusDefaultViewsController {
 
   /**
    * Override EntityDefaultViewsController::views_data().

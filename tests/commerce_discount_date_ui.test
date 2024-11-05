@@ -47,10 +47,10 @@ class CommerceDiscountDateUITest extends CommerceDiscountTestBase {
    */
   public function testDiscountDateUIAddDiscount() {
     // Login with store admin.
-    $this->drupalLogin($this->store_admin);
+    $this->backdropLogin($this->store_admin);
 
     // Access to the admin discount creation page.
-    $this->drupalGet('admin/commerce/discounts/add');
+    $this->backdropGet('admin/commerce/discounts/add');
 
     // Check the integrity of the add form.
     $this->assertFieldByName('commerce_discount_fields[commerce_discount_date][und][0][value][date]', NULL, 'Start date field is present');
@@ -70,7 +70,7 @@ class CommerceDiscountDateUITest extends CommerceDiscountTestBase {
       'commerce_discount_fields[commerce_discount_date][und][0][value][date]' => $start_date,
       'commerce_discount_fields[commerce_discount_date][und][0][value2][date]' => $end_date,
     );
-    $this->drupalPost(NULL, $values, t('Save discount'));
+    $this->backdropPost(NULL, $values, t('Save discount'));
 
     // Load the discount and wrap it.
     $discount = entity_load_single('commerce_discount', 1);
@@ -97,10 +97,10 @@ class CommerceDiscountDateUITest extends CommerceDiscountTestBase {
     $discount = $this->createDateDiscount('order_discount', 'fixed_amount', 300, $start_time, $end_time);
 
     // Login with store admin.
-    $this->drupalLogin($this->store_admin);
+    $this->backdropLogin($this->store_admin);
 
     // Access to the admin discount edit page.
-    $this->drupalGet('admin/commerce/discounts/manage/' . $discount->name);
+    $this->backdropGet('admin/commerce/discounts/manage/' . $discount->name);
 
     // Check the integrity of the add form.
     $this->assertFieldByName('commerce_discount_fields[commerce_discount_date][und][0][value][date]', NULL, 'Start date field is present');
@@ -121,7 +121,7 @@ class CommerceDiscountDateUITest extends CommerceDiscountTestBase {
       'commerce_discount_fields[commerce_discount_date][und][0][value2][date]' => $end_date,
     );
 
-    $this->drupalPost(NULL, $values, t('Save discount'));
+    $this->backdropPost(NULL, $values, t('Save discount'));
 
     // Load the discount from the database and wrap it.
     $discounts = entity_load('commerce_discount', array($discount->discount_id), $conditions = array(), $reset = TRUE);

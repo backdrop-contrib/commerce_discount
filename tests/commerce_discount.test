@@ -161,7 +161,7 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
    */
   public function testCommerceDiscountOneHundredPercentOff() {
     // Login as the store admin.
-    $this->drupalLogin($this->store_admin);
+    $this->backdropLogin($this->store_admin);
 
     // Create a 100% off discount and create a test product.
     $discount = $this->createDiscount('product_discount', 'percentage', 100, 'freebie');
@@ -301,7 +301,7 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
 
     // Check if the discount was added as a component to the line item.
     $price_data = $order_wrapper->commerce_line_items->get(0)->commerce_unit_price->value();
-      $this->assertEqual($price_data['amount'], 1000, 'Line item amount without Percentage product discount is correct.');
+    $this->assertEqual($price_data['amount'], 1000, 'Line item amount without Percentage product discount is correct.');
   }
 
   /**
@@ -313,19 +313,19 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
     $formatted_discounted_price = '$7.00';
 
     // Log in as a normal user.
-    $this->drupalLogin($this->store_customer);
+    $this->backdropLogin($this->store_customer);
 
     $nid = $this->product_node->nid;
     // View a product node.
-    $this->drupalGet("node/$nid");
+    $this->backdropGet("node/$nid");
     $product_price = $this->xpath('//div[contains(@class, "field-name-commerce-price")]/div[contains(@class, "field-item")]');
     $this->assertTrue(trim((string) $product_price[0]->div) == $formatted_discounted_price, 'Discounted product price is shown on product page.');
 
     // Add a product to the cart.
-    $this->drupalPost('node/' . $this->product_node->nid, array(), t('Add to cart'));
+    $this->backdropPost('node/' . $this->product_node->nid, array(), t('Add to cart'));
 
     // View the cart.
-    $this->drupalGet('cart');
+    $this->backdropGet('cart');
     $product_price = $this->xpath('//td[contains(@class, "views-field-commerce-unit-price")]');
     $this->assertTrue(trim((string) $product_price[0]->{0}) == $formatted_discounted_price, 'Discounted product price is shown on the cart.');
   }

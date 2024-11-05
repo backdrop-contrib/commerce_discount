@@ -10,8 +10,37 @@
  */
 class CommerceDiscount extends Entity {
 
+    /**
+   * Implements EntityInterface::id().
+   */
+  public function id() {
+    return $this->discount_id;
+  }
+
   /**
-   * The machine name of the discount offer.
+   * Implements EntityInterface::entityType().
+   */
+  public function entityType() {
+    return $this->type;
+  }
+
+  /**
+   * Implements EntityInterface::label().
+   */
+  public function label() {
+    return t('Discount @id', array('@id' => $this->discount_id));
+  }
+
+  /**
+   * Implements EntityInterface::uri().
+   */
+  public function uri() {
+    // return the admin page for the order.
+    return $this->defaultUri();
+  }
+
+  /**
+   * The machine name of the discount.
    *
    * @var string
    */

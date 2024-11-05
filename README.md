@@ -1,31 +1,44 @@
-## CONTENTS OF THIS FILE
+# Commerce Discount
 
- * Requirements
- * Contributing
+Commerce Discount provides a user interface for creating and managing various
+types of Product and Order discounts. It lets merchants more easily configure
+promotions without having to learn Rules, a core requirement for product pricing
+in Commerce.
 
+The module adds essential features to promotions through the use of a custom
+entity type, including fields to configure how a discount is displayed in the
+cart, usage counts, valid date ranges, and more.
 
-## REQUIREMENTS
+## Requirements
 
 This module requires the following modules:
 
- * [Entity](https://drupal.org/project/entity)
- * [Views](https://drupal.org/project/views)
- * [Commerce](https://drupal.org/project/commerce)
- * [Inline Conditions ](https://drupal.org/project/inline_conditions)
- * [Entity Reference ](https://drupal.org/project/entityreference)
- * [Inline Entity Form](https://drupal.org/project/inline_entity_form)
+* Entity Plus
+* Views
+* Commerce
+* Inline Conditions
+* Entity Reference
+* Inline Entity Form
 
+## Installation
 
-## CONTRIBUTING
+* Install this module using the [official Backdrop CMS instructions](https://backdropcms.org/guide/modules)
 
-To contribute CSS fixes/improvements to this module please do so in the `sass`
-folder. This is a SASS folder and you can compile the CSS using the following
-command:
+## Current Maintainers
 
-One time:
+* Seeking maintainers.
 
-```sass --update--style expanded sass:css```
+## Credit
 
-Watch changes and compile on the fly:
+Originally maintained on Drupal by:
 
-```sass --watch --style expanded  ass:css```
+* https://www.drupal.org/u/bojanz
+* https://www.drupal.org/u/joelpittet
+* https://www.drupal.org/u/jsacksick
+* https://www.drupal.org/u/mglaman
+* https://www.drupal.org/u/rszrama
+
+## License
+
+This project is GPL v2 software. See the LICENSE.txt file in this directory for
+complete text.

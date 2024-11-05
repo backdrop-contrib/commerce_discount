@@ -300,7 +300,7 @@ function commerce_product_has_owner_configure($settings) {
     '#type' => 'textfield',
     '#title' => t('Users'),
     '#title_display' => 'invisible',
-    '#default_value' => isset($settings['value']) ? user_load($settings['value'])->name : '',
+    '#default_value' => isset($settings['value'])?user_load($settings['value'])->name : '',
     '#required' => TRUE,
     '#autocomplete_path' => 'user/autocomplete',
     '#element_validate' => array('_commerce_order_has_owner_validate'),

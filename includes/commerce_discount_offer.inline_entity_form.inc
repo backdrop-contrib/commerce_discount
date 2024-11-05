@@ -22,7 +22,7 @@ class CommerceDiscountOfferInlineEntityFormController extends EntityInlineEntity
 
     $offer = $entity_form['#entity'];
     if (!empty($form_state['values'])) {
-      $offer_values = drupal_array_get_nested_value($form_state['values'], $entity_form['#parents']);
+      $offer_values = backdrop_array_get_nested_value($form_state['values'], $entity_form['#parents']);
       // If the type was changed via AJAX, change it on the entity.
       if (!empty($offer_values['type'])) {
         // We have to use the form_state to hold this, because if other

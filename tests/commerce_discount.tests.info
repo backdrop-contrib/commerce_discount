@@ -1,0 +1,54 @@
+[CommerceDiscountTest]
+name = Discounts
+description = Test discounts functionality
+group = Commerce Discount
+file = commerce_discount.test
+
+[CommerceDiscountTestBase]
+name = CommerceDiscountTestBase
+description = CommerceDiscountTestBase
+group = commerce_discount
+file = commerce_discount_base.test
+
+[CommerceDiscountConditionsTest]
+name = Discounts inline conditions
+description = Test discounts inline conditions
+group = Commerce Discount
+file = commerce_discount_conditions.test
+
+[CommerceDiscountDateTest]
+name = Discounts date
+description = Test discounts date functionality
+group = Commerce Discount
+file = commerce_discount_date.test
+
+[CommerceDiscountDateUITest]
+name = Discounts date UI
+description = Test discounts date UI
+group = Commerce Discount UI
+file = commerce_discount_date_ui.test
+
+[CommerceDiscountShippingTest]
+name = Shipping discounts
+description = Test shipping discounts functionality
+group = Commerce Discount
+file = commerce_discount_shipping.test
+
+[CommerceDiscountUITest]
+name = Discounts
+description = Test discounts UI and functionality
+group = Commerce Discount UI
+file = commerce_discount_ui.test
+
+[CommerceDiscountUsageTest]
+name = Discounts usage
+description = Test discounts usage functionality
+group = Commerce Discount
+file = commerce_discount_usage.test
+
+[CommerceDiscountUsageUITest]
+name = Discounts usage
+description = Test discounts usage UI
+group = Commerce Discount UI
+file = commerce_discount_usage_ui.test
+
