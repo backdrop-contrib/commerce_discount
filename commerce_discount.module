@@ -285,7 +285,7 @@ function commerce_discount_permission() {
  */
 function commerce_discount_views_api() {
   return array(
-    'version' => 3,
+    'api' => 3,
     'path' => backdrop_get_path('module', 'commerce_discount') . '/includes/views',
   );
 }
