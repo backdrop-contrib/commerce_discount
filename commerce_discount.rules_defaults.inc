@@ -13,7 +13,7 @@ function commerce_discount_default_rules_configuration() {
 
   // Create a rule for each commerce discount entity.
   entity_get_controller('commerce_discount')->resetCache();
-  $discounts = entity_load('commerce_discount');
+  $discounts = entity_load_multiple_by_name('commerce_discount');
 
   // Build the discount rules.
   if ($discounts) {

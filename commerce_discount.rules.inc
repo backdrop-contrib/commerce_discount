@@ -401,7 +401,7 @@ function commerce_discount_rules_event_info() {
   $items['commerce_discount_order'] = array(
     'label' => t('Apply a discount to a given order'),
     'group' => t('Commerce Discount'),
-    'variables' => entity_rules_events_variables('commerce_order', t('Order', array(), array('context' => 'a backdrop commerce order'))),
+    'variables' => rules_entity_events_variables('commerce_order', t('Order', array(), array('context' => 'a backdrop commerce order'))),
     'access callback' => 'commerce_order_rules_access',
   );
 

@@ -236,7 +236,7 @@ function commerce_discount_entity_info() {
 
   $items['commerce_discount_offer'] = array(
     'label' => t('Commerce Discount Offer'),
-    'controller class' => 'EntityAPIControllerExportable',
+    'controller class' => 'EntityPlusControllerExportable',
     'entity class' => 'CommerceDiscountOffer',
     'base table' => 'commerce_discount_offer',
     'fieldable' => TRUE,
@@ -283,7 +283,7 @@ function commerce_discount_permission() {
 /**
  * Implements hook_views_api().
  */
-function commerce_discount_views_api($module, $api) {
+function commerce_discount_views_api() {
   return array(
     'version' => 3,
     'path' => backdrop_get_path('module', 'commerce_discount') . '/includes/views',
